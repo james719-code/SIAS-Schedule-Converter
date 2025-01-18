@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIAS Schedule Adjust</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">Schedule</div>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#upload">Upload</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h1>Welcome to SIAS Schedule Organizer</h1>
+      <p>"Your Schedule, Simplified and Organized with Us!"</p>
+    </div>
+  </section>
+
+  <!-- PDF Upload Section -->
+   <section id="upload" class="upload-section">
+    <h2>Upload Your XLXS file</h2>
+    <div class="pdf-upload-container" id="pdf-upload-container">
+      <input type="file" id="xlsx-upload" accept="application/xlsx" hidden />
+      <div class="drag-drop-area" id="drag-drop-area">
+        <p>Drag & Drop your XLSX file here or click to browse.</p>
+      </div>
+    </div>
+    <div id="excel-preview"></div>
+    <div id="pdf-text-container"></div> <!-- To display the table after parsing -->
+  </section>
+
+  <!-- Guide Section -->
+<section id="guide" class="guide">
+  <h2>How to Use the Website</h2>
+  <ol>
+    <li>Download the PDF file of your schedule from SIAS (not the EAF, the PDF).</li>
+    <li>Convert the PDF to XLSX using this site: <a href="https://www.freeconvert.com/document-converter" target="_blank">FreeConvert - Document Converter</a></li>
+    <li>Once you have the converted XLSX file, drag and drop it into the upload section.</li>
+    <li>See the result displayed on the page!</li>
+  </ol>
+</section>
+
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <h2>Features</h2>
+    <div class="feature-cards">
+      <div class="card">
+        <h3>Responsive Design</h3>
+        <p>Our website looks great on any device, from mobile to desktop.</p>
+      </div>
+      <div class="card">
+        <h3>Modern UI</h3>
+        <p>Clean and stylish design with the latest web trends.</p>
+      </div>
+      <div class="card">
+        <h3>Conversion of Hassle PDF</h3>
+        <p>Effortlessly convert pdf schedule from sias to readable and order schedule.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="contact">
+    <p>&copy; 2025 MyWebsite. All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
