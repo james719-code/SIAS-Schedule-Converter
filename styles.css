@@ -142,6 +142,48 @@ body {
   font-size: 1rem;
 }
 
+#export-image-btn {
+  display: inline-block; /* Allows margin auto to work if section is text-align center */
+  padding: 12px 28px;
+  font-size: 1.1em; /* Responsive font size */
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #007bff; /* A nice primary blue */
+  border: none;
+  border-radius: 8px; /* Rounded corners */
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  margin-top: 20px; /* Space above the button */
+}
+
+#export-image-btn:hover:not(:disabled) {
+  background-color: #0056b3; /* Darker shade on hover */
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+#export-image-btn:active:not(:disabled) {
+  background-color: #004085; /* Even darker for active/click state */
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#export-image-btn:focus {
+  outline: none; /* Remove default outline */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4); /* Custom focus ring */
+}
+
+#export-image-btn:disabled {
+  background-color: #cccccc; /* Gray out when disabled */
+  color: #888888;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 /* Footer styles */
 footer {
   background-color: #333;
