@@ -1,6 +1,7 @@
-const uploadInput = document.getElementById("xlsx-upload");
+// Required setup for PDF.js. This MUST be at the top. 
+const uploadInput = document.getElementById("xlsx-upload"); // Note: ID is kept for compatibility with existing HTML
 const dragDropArea = document.getElementById("drag-drop-area");
-const excelPreview = document.getElementById("excel-preview");
+const excelPreview = document.getElementById("excel-preview"); // Note: ID is kept for compatibility
 const exportButton = document.getElementById("export-image-btn");
 
 let currentProcessedData = null;
@@ -13,35 +14,67 @@ dragDropArea.addEventListener("dragleave", () => { dragDropArea.style.background
 dragDropArea.addEventListener("drop", (e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; handleFileSelect({ target: { files: [file] } }); dragDropArea.style.backgroundColor = ""; });
 
 // --- Core File Handling ---
-function handleFileSelect(event) {
-  const file = event.target.files[0];
-  currentProcessedData = null;
-  excelPreview.innerHTML = "<p>Processing file...</p>";
+async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    currentProcessedData = null;
+    excelPreview.innerHTML = "<p>Processing PDF file...</p>";
 
-  if (file && file.name.endsWith(".xlsx")) {
-    const reader = new FileReader();
-    reader.onload = function () {
-      const data = reader.result;
-      try {
-        const workbook = XLSX.read(data, { type: "binary" });
-        if (workbook.SheetNames.length < 2) { showError("The Excel file must have at least two sheets."); return; }
-        const sheet2 = workbook.Sheets[workbook.SheetNames[1]];
-        if (sheet2) {
-          currentProcessedData = processSheetData(sheet2);
-          const webHtml = generateWebDisplayHTML(currentProcessedData.daysMapData);
-          displayHTMLContent(webHtml);
-          const hasData = currentProcessedData.daysMapData && Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
-          if (exportButton) exportButton.disabled = !hasData;
-          if (!hasData && !excelPreview.querySelector('p[style*="color:red"]')) {
-             excelPreview.innerHTML = "<p>No schedule data found in Sheet 2 according to the expected format.</p>";
-          }
-        } else { showError("Sheet 2 could not be processed."); }
-      } catch (error) { console.error("Error processing Excel file:", error); showError("Error processing the Excel file. Ensure it's valid and not corrupted."); }
-    };
-    reader.onerror = () => showError("Error reading the file.");
-    reader.readAsBinaryString(file);
-  } else { showError("Please upload a valid .xlsx file."); }
+    if (file && file.name.toLowerCase().endsWith(".pdf")) {
+        const reader = new FileReader();
+        reader.onload = async function () {
+            const data = reader.result; // This will be an ArrayBuffer
+            try {
+                const loadingTask = pdfjsLib.getDocument({ data: data });
+                const pdf = await loadingTask.promise;
+
+                if (pdf.numPages < 1) {
+                    showError("The PDF file is empty or invalid.");
+                    return;
+                }
+                
+                let combinedData = {
+                    daysMapData: { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] },
+                    sectionName: ""
+                };
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    excelPreview.innerHTML = `<p>Processing PDF file... (Page ${i}/${pdf.numPages})</p>`;
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageData = processPdfTextContent(textContent);
+                    
+                    for (const day in pageData.daysMapData) {
+                        combinedData.daysMapData[day].push(...pageData.daysMapData[day]);
+                    }
+                    
+                    if (pageData.sectionName && !combinedData.sectionName) {
+                        combinedData.sectionName = pageData.sectionName;
+                    }
+                }
+                
+                currentProcessedData = combinedData;
+                const webHtml = generateWebDisplayHTML(currentProcessedData.daysMapData);
+                displayHTMLContent(webHtml);
+
+                const hasData = currentProcessedData.daysMapData && Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
+                if (exportButton) exportButton.disabled = !hasData;
+
+                if (!hasData && !excelPreview.querySelector('p[style*="color:red"]')) {
+                    excelPreview.innerHTML = `<p>No schedule data found in the PDF. Please ensure it is the correct "Certificate of Enrollment" file and is not an image.</p>`;
+                }
+
+            } catch (error) {
+                console.error("Error processing PDF file:", error);
+                showError("Error processing the PDF file. Ensure it's valid, not corrupted, and text-based.");
+            }
+        };
+        reader.onerror = () => showError("Error reading the file.");
+        reader.readAsArrayBuffer(file);
+    } else {
+        showError("Please upload a valid .pdf file.");
+    }
 }
+
 
 function showError(message) {
     excelPreview.innerHTML = `<p style="color:red; font-weight:bold;">${message}</p>`;
@@ -49,75 +82,79 @@ function showError(message) {
     currentProcessedData = null;
 }
 
-function processSheetData(sheet) {
-  const range = XLSX.utils.decode_range(sheet["!ref"]);
-  const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
-  let extractedSectionName = "";
-  const lastColIndex = range.e.c;
+// --- NEW, ROBUST PDF PARSING LOGIC ---
+function processPdfTextContent(textContent) {
+    const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
+    let extractedSectionName = "";
 
-  if (lastColIndex >= 0 && (range.s.r + 1) <= range.e.r) {
-      const sectionCell = sheet[XLSX.utils.encode_cell({ r: range.s.r + 1, c: lastColIndex })];
-      if (sectionCell && sectionCell.v) {
-          extractedSectionName = String(sectionCell.v).trim();
-      }
-  }
-
-  for (let rowNum = range.s.r + 1; rowNum <= range.e.r; rowNum++) {
-    const subjectCell = sheet[XLSX.utils.encode_cell({ r: rowNum, c: 2 })];
-    const scheduleCell = sheet[XLSX.utils.encode_cell({ r: rowNum, c: 4 })];
-    const roomCell = sheet[XLSX.utils.encode_cell({ r: rowNum, c: 5 })];
-
-    if (subjectCell?.v && scheduleCell?.v && roomCell?.v) {
-      const subject = String(subjectCell.v).trim();
-      const scheduleInput = String(scheduleCell.v).trim();
-      const room = String(roomCell.v).trim();
-      if (scheduleInput) {
-        let time, daysString;
-        const lowerSchedule = scheduleInput.toLowerCase();
-        // Regex to capture the full time part (e.g., "7:30-9:30 am", "1-3pm", "10:00AM - 11:00 AM")
-        let timeMatch = lowerSchedule.match(/([\d\s\:\-]+(?:am|pm))/i);
-        if (timeMatch && timeMatch[0]) {
-            time = timeMatch[0].trim();
-            daysString = scheduleInput.substring(scheduleInput.toLowerCase().indexOf(timeMatch[0]) + timeMatch[0].length).trim();
-        } else {
-          // Fallback if the regex above fails (e.g. no am/pm in the schedule string but it's clearly a time)
-          // This part might need adjustment based on more varied "bad" inputs
-          let amIndex = lowerSchedule.indexOf('am');
-          let pmIndex = lowerSchedule.indexOf('pm');
-          let splitIndex = -1;
-
-          if (amIndex !== -1 && (pmIndex === -1 || amIndex < pmIndex)) {
-            splitIndex = amIndex;
-          } else if (pmIndex !== -1) {
-            splitIndex = pmIndex;
-          }
-
-          if (splitIndex !== -1) {
-            time = scheduleInput.substring(0, splitIndex + 2).trim(); // +2 for "am" or "pm"
-            daysString = scheduleInput.substring(splitIndex + 2).trim();
-          } else {
-            // If still no AM/PM, the entire string might be time or it's unparseable
-            time = scheduleInput; // Assume the whole thing is time if no days found
-            daysString = ""; // No days specified
-          }
-        }
-
-        if (daysString) {
-          let tempDaysUpper = daysString.toUpperCase();
-          if (tempDaysUpper.includes('TH')) { daysMap.Thursday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('TH', ''); }
-          if (tempDaysUpper.includes('M')) { daysMap.Monday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('M', ''); }
-          if (tempDaysUpper.includes('T')) { daysMap.Tuesday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('T', ''); }
-          if (tempDaysUpper.includes('W')) { daysMap.Wednesday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('W', ''); }
-          if (tempDaysUpper.includes('F')) { daysMap.Friday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('F', ''); }
-          // Handle S or SA for Saturday, ensuring it's processed after TH, T to avoid conflict if S is used for Sunday later
-          if (tempDaysUpper.includes('SA')) { daysMap.Saturday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('SA', '');}
-          else if (tempDaysUpper.includes('S')) { daysMap.Saturday.push({ subject, time, room }); tempDaysUpper = tempDaysUpper.replace('S', '');}
-        }
-      }
+    // Group text items by their vertical position (y-coordinate) to form lines
+    const rows = {};
+    for (const item of textContent.items) {
+        const y = Math.round(item.transform[5]); // Group by y-coordinate
+        if (!rows[y]) rows[y] = [];
+        rows[y].push({ text: item.str, x: item.transform[4] });
     }
-  }
-  return { daysMapData: daysMap, sectionName: extractedSectionName };
+
+    // This regex is the anchor. It finds the schedule string within a full line of text.
+    // It captures: 1) The full time string, 2) The day characters.
+    const scheduleRegex = /((?:\d{1,2}:\d{2}-\d{1,2}:\d{2}|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([A-ZTHSA]+)/i;
+
+    for (const y in rows) {
+        const rowItems = rows[y].sort((a, b) => a.x - b.x); // Sort text left-to-right
+        const fullLineText = rowItems.map(item => item.text).join(' ');
+
+        const match = fullLineText.match(scheduleRegex);
+
+        if (match) {
+            const time = match[1].trim(); // e.g., "10:30-11:30 am"
+            const daysString = match[2].trim(); // e.g., "MWTh"
+            const fullScheduleString = match[0]; // The whole matched "time days" string
+
+            const parts = fullLineText.split(fullScheduleString);
+            
+            // Extract Subject: everything before the schedule string
+            let subjectPart = parts[0].trim();
+            // Clean the subject: remove leading codes and trailing unit count
+            let subject = subjectPart.replace(/^[A-Z0-9-]+\s+[A-Z0-9-]+\s*/, '').replace(/\s+\d\.\d$/, '').trim();
+
+            // Extract Room and Section: everything after the schedule string
+            const remainingPart = parts[1].trim();
+            const remainingParts = remainingPart.split(/\s+/);
+            const section = remainingParts.pop(); // The last part is the section
+            const room = remainingParts.join(''); // Join the rest to form the room name
+
+            if (section && !extractedSectionName) {
+                extractedSectionName = section;
+            }
+
+            // --- Correctly parse multi-day strings like "MWTh" ---
+            let i = 0;
+            const tempDaysUpper = daysString.toUpperCase();
+            while (i < tempDaysUpper.length) {
+                // Check for two-character day codes first
+                if (i + 1 < tempDaysUpper.length && tempDaysUpper.substring(i, i + 2) === 'TH') {
+                    daysMap.Thursday.push({ subject, time, room });
+                    i += 2;
+                } else if (i + 1 < tempDaysUpper.length && tempDaysUpper.substring(i, i + 2) === 'SA') {
+                    daysMap.Saturday.push({ subject, time, room });
+                    i += 2;
+                } else {
+                    // Handle one-character day codes
+                    const dayCode = tempDaysUpper.charAt(i);
+                    if (dayCode === 'M') daysMap.Monday.push({ subject, time, room });
+                    else if (dayCode === 'T') daysMap.Tuesday.push({ subject, time, room });
+                    else if (dayCode === 'W') daysMap.Wednesday.push({ subject, time, room });
+                    else if (dayCode === 'F') daysMap.Friday.push({ subject, time, room });
+                    else if (dayCode === 'S') daysMap.Saturday.push({ subject, time, room }); // Fallback for 'S'
+                    i += 1;
+                }
+            }
+        }
+    }
+    
+    return { daysMapData: daysMap, sectionName: extractedSectionName };
 }
+
 
 function convertTo24HourTime(timeString) {
   if (!timeString || typeof timeString !== 'string') return 0;
@@ -140,45 +177,28 @@ function convertTo24HourTime(timeString) {
   return hour * 60 + minute;
 }
 
-// --- CORRECTED sortByTime function ---
 const sortByTime = (a, b) => {
-  // a.time and b.time are strings like "7:30-9:30 am", "1-3 pm", "9:30AM-10:30AM", "8:00 AM - 10:00 AM"
-
   function extractActualStartTime(fullTimeStr) {
-    if (!fullTimeStr || typeof fullTimeStr !== 'string') return ""; // Handle undefined or non-string input
-
-    // Attempt to find a time pattern like HH:MM AM/PM or H AM/PM at the beginning of the string
-    // This covers "8:00 AM - ..." or "9:30AM-..."
+    if (!fullTimeStr || typeof fullTimeStr !== 'string') return "";
     let match = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
     if (match && match[1]) {
-      return match[1].trim(); // e.g., "8:00 AM" or "9:30AM"
+      return match[1].trim();
     }
-
-    // If not, it might be like "7:30-9:30 am" or "1-3 pm" (where AM/PM is at the end of the range)
-    // Extract the first numeric part and the overall am/pm from the end of the string
-    const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/); // e.g., "7:30" from "7:30-9:30 am", or "1" from "1-3 pm"
+    const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/);
     if (firstPartMatch && firstPartMatch[1]) {
       const numericStart = firstPartMatch[1];
-      const periodMatch = fullTimeStr.match(/(am|pm)\s*$/i); // AM/PM at the very end of the string
+      const periodMatch = fullTimeStr.match(/(am|pm)\s*$/i);
       if (periodMatch && periodMatch[1]) {
-        return `${numericStart} ${periodMatch[1]}`; // e.g., "7:30 am" or "1 pm"
+        return `${numericStart} ${periodMatch[1]}`;
       }
-      // If no AM/PM at the end, but the numericStart was found, return it.
-      // convertTo24HourTime will likely return 0, which is a graceful way to handle unparseable times.
       return numericStart;
     }
-    
-    // Fallback: if no specific pattern matched, return the original string part.
-    // This allows convertTo24HourTime to try and parse it, or fail returning 0.
-    return fullTimeStr.split('-')[0].trim(); // Last resort, similar to old problematic logic but only as fallback
+    return fullTimeStr.split('-')[0].trim();
   }
-
   const startTimeA_str = extractActualStartTime(a.time);
   const startTimeB_str = extractActualStartTime(b.time);
-
   return convertTo24HourTime(startTimeA_str) - convertTo24HourTime(startTimeB_str);
 };
-
 
 function generateWebDisplayHTML(daysMap) {
   let htmlContent = "";
