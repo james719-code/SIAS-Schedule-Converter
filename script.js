@@ -338,8 +338,10 @@ async function exportScheduleToImage() {
   }
   const currentSectionName = currentProcessedData.sectionName || "";
 
-  const targetImageWidth = screen.width;
-  const targetImageHeight = screen.height;
+  const dpr = window.devicePixelRatio || 1;
+
+  const targetImageWidth = screen.width * dpr;
+  const targetImageHeight = screen.height * dpr;
   const isPortraitView = targetImageHeight > targetImageWidth;
   const filenameSuffix = `${targetImageWidth}x${targetImageHeight}_wallpaper`;
 
