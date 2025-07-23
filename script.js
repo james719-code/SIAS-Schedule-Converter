@@ -1,4 +1,9 @@
-// Required setup for PDF.js. This MUST be at the top.
+// --- Configuration ---
+// The URL of your Python backend deployed on Render.
+const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf'; // <-- UPDATED
+
+// The API_KEY is no longer needed for the Render backend.
+
 const uploadInput = document.getElementById("xlsx-upload");
 const dragDropArea = document.getElementById("drag-drop-area");
 const excelPreview = document.getElementById("excel-preview");
@@ -6,181 +11,182 @@ const exportButton = document.getElementById("export-image-btn");
 
 let currentProcessedData = null;
 
-// --- Event Listeners ---
+// --- Event Listeners (Unchanged) ---
 dragDropArea.addEventListener("click", () => uploadInput.click());
-uploadInput.addEventListener("change", handleFileSelect);
+uploadInput.addEventListener("change", (e) => handleFileSelect(e.target.files[0]));
 dragDropArea.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dragDropArea.style.backgroundColor = "#f4f4f4";
+    e.preventDefault();
+    dragDropArea.style.backgroundColor = "#f4f4f4";
 });
 dragDropArea.addEventListener("dragleave", () => {
-  dragDropArea.style.backgroundColor = "";
+    dragDropArea.style.backgroundColor = "";
 });
 dragDropArea.addEventListener("drop", (e) => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  handleFileSelect({ target: { files: [file] } });
-  dragDropArea.style.backgroundColor = "";
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    handleFileSelect(file);
+    dragDropArea.style.backgroundColor = "";
 });
 
-// --- Core File Handling ---
-async function handleFileSelect(event) {
-  const file = event.target.files[0];
-  currentProcessedData = null;
-  excelPreview.innerHTML = "<p>Processing PDF file...</p>";
 
-  if (file && file.name.toLowerCase().endsWith(".pdf")) {
-    const reader = new FileReader();
-    reader.onload = async function () {
-      const data = reader.result;
-      try {
-        const loadingTask = pdfjsLib.getDocument({ data: data });
-        const pdf = await loadingTask.promise;
+// =========================================================================
+// --- CORE FILE HANDLING (UPDATED FOR RENDER/FLASK BACKEND) ---
+// =========================================================================
+async function handleFileSelect(file) {
+    // Your file validation logic remains the same...
+    console.log("File object received:", file);
+    if (!file) {
+        showError("No file was selected.");
+        return;
+    }
+    if (file.size === 0) {
+        showError("The selected file is empty (0 bytes). Please select a valid PDF.");
+        return;
+    }
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+        showError("Please upload a valid .pdf file.");
+        return;
+    }
 
-        if (pdf.numPages < 1) {
-          showError("The PDF file is empty or invalid.");
-          return;
+    currentProcessedData = null; // Reset data
+    excelPreview.innerHTML = "<p>Uploading and processing PDF...</p>";
+    if (exportButton) exportButton.disabled = true;
+
+    const formData = new FormData();
+    formData.append('pdf_file', file);
+
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            body: formData,
+            // --- UPDATED ---
+            // No special headers are needed anymore. The browser will automatically
+            // set the Content-Type to multipart/form-data.
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // The "data.error" comes from the jsonify({ "error": ... }) in your Flask app
+            throw new Error(data.error || `Server responded with status ${response.status}`);
         }
 
-        let combinedData = {
-          daysMapData: { Monday:[], Tuesday:[], Wednesday:[], Thursday:[], Friday:[], Saturday:[] },
-          sectionName: "",
-        };
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          excelPreview.innerHTML = `<p>Processing PDF file... (Page ${i}/${pdf.numPages})</p>`;
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageData = processPdfTextContent(textContent);
-          for (const day in pageData.daysMapData) {
-            combinedData.daysMapData[day].push(...pageData.daysMapData[day]);
-          }
-          if (pageData.sectionName && !combinedData.sectionName) {
-            combinedData.sectionName = pageData.sectionName;
-          }
-        }
-
-        currentProcessedData = combinedData;
+        // ... The rest of your success logic is perfect and does not need to change ...
+        const transformedData = transformBackendDataToDaysMap(data);
+        currentProcessedData = transformedData;
         const webHtml = generateWebDisplayHTML(currentProcessedData.daysMapData);
         displayHTMLContent(webHtml);
-
         const hasData = Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
         if (exportButton) exportButton.disabled = !hasData;
-
-        if (!hasData && !excelPreview.querySelector('p[style*="color:red"]')) {
-          excelPreview.innerHTML = `<p>No schedule data found. Please ensure it is the correct "Certificate of Enrollment" file and is not an image.</p>`;
+        if (!hasData) {
+            excelPreview.innerHTML = `<p>No schedule data could be extracted from the file.</p>`;
         }
-      } catch (error) {
-        console.error("Error processing PDF file:", error);
-        showError("Error processing PDF: Ensure it's valid, not corrupted, and text-based.");
-      }
-    };
-    reader.onerror = () => showError("Error reading the file.");
-    reader.readAsArrayBuffer(file);
-  } else {
-    showError("Please upload a valid .pdf file.");
-  }
+
+    } catch (error) {
+        console.error("Error communicating with backend:", error);
+        showError(error.message);
+    }
 }
+
+// ... THE REST OF YOUR JAVASCRIPT FILE ...
+// All of your other functions (showError, transformBackendDataToDaysMap,
+// generateWebDisplayHTML, and all the canvas drawing functions)
+// are perfect and DO NOT need to be changed.
+// Just scroll to the bottom of your file to make sure everything below this point is still there.
 
 function showError(message) {
-  excelPreview.innerHTML = `<p style="color:red; font-weight:bold;">${message}</p>`;
-  if (exportButton) exportButton.disabled = true;
-  currentProcessedData = null;
+    excelPreview.innerHTML = `<p style="color:red; font-weight:bold;">Error: ${message}</p>`;
+    if (exportButton) exportButton.disabled = true;
+    currentProcessedData = null;
 }
 
-// --- PDF PARSING & UTILITY LOGIC (Unchanged) ---
-function processPdfTextContent(textContent) {
-  const daysMap = { Monday:[], Tuesday:[], Wednesday:[], Thursday:[], Friday:[], Saturday:[] };
-  let extractedSectionName = "";
-  const rows = {};
-  for (const item of textContent.items) {
-    const y = Math.round(item.transform[5]);
-    if (!rows[y]) rows[y] = [];
-    rows[y].push({ text: item.str, x: item.transform[4] });
-  }
-  const scheduleRegex = /((?:\d{1,2}:\d{2}-\d{1,2}:\d{2}|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([A-ZTHSA]+)/i;
-  for (const y in rows) {
-    const rowItems = rows[y].sort((a, b) => a.x - b.x);
-    const fullLineText = rowItems.map((item) => item.text).join(" ");
-    const match = fullLineText.match(scheduleRegex);
-    if (match) {
-      const time = match[1].trim();
-      const daysString = match[2].trim();
-      const fullScheduleString = match[0];
-      const parts = fullLineText.split(fullScheduleString);
-      let subject = parts[0].trim().replace(/^[A-Z0-9-]+\s+[A-Z0-9-]+\s*/, "").replace(/\s+\d\.\d$/, "").trim();
-      const remainingPart = parts[1].trim();
-      const remainingParts = remainingPart.split(/\s+/);
-      const section = remainingParts.pop();
-      let roomRaw = remainingParts.join("");
-      const roomMatch = roomRaw.match(/^([A-Za-z]+)(\d+)/);
-      let room = roomMatch ? `${roomMatch[1]} ${roomMatch[2]}` : roomRaw;
-      if (section && !extractedSectionName) extractedSectionName = section;
-      if (room === "IITROOM 2") room = "IITRM 20";
-      let i = 0;
-      const tempDaysUpper = daysString.toUpperCase();
-      while (i < tempDaysUpper.length) {
-        if (i + 1 < tempDaysUpper.length && tempDaysUpper.substring(i, i + 2) === "TH") {
-          daysMap.Thursday.push({ subject, time, room }); i += 2;
-        } else if (i + 1 < tempDaysUpper.length && tempDaysUpper.substring(i, i + 2) === "SA") {
-          daysMap.Saturday.push({ subject, time, room }); i += 2;
-        } else {
-          const dayCode = tempDaysUpper.charAt(i);
-          if (dayCode === "M") daysMap.Monday.push({ subject, time, room });
-          else if (dayCode === "T") daysMap.Tuesday.push({ subject, time, room });
-          else if (dayCode === "W") daysMap.Wednesday.push({ subject, time, room });
-          else if (dayCode === "F") daysMap.Friday.push({ subject, time, room });
-          else if (dayCode === "S") daysMap.Saturday.push({ subject, time, room });
-          i += 1;
+function transformBackendDataToDaysMap(backendData) {
+    const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
+
+    if (!backendData || !backendData.subjects) {
+        return { daysMapData: daysMap, sectionName: "" };
+    }
+
+    for (const subjectData of backendData.subjects) {
+        for (const schedule of subjectData.schedules) {
+            const scheduleRegex = /((?:\d{1,2}(?::\d{2})?-\d{1,2}(?::\d{2})?|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([MTWFHSaTh]+)/i;
+            const match = schedule.time.match(scheduleRegex);
+
+            if (match) {
+                const timePart = match[1].trim();
+                const daysString = match[2].trim().toUpperCase();
+
+                const scheduleEntry = {
+                    subject: subjectData.subject,
+                    time: timePart,
+                    room: schedule.room,
+                };
+
+                let i = 0;
+                while (i < daysString.length) {
+                    if (daysString.substring(i, i + 2) === "TH") {
+                        daysMap.Thursday.push(scheduleEntry);
+                        i += 2;
+                    } else {
+                        const dayCode = daysString.charAt(i);
+                        if (dayCode === "M") daysMap.Monday.push(scheduleEntry);
+                        else if (dayCode === "T") daysMap.Tuesday.push(scheduleEntry);
+                        else if (dayCode === "W") daysMap.Wednesday.push(scheduleEntry);
+                        else if (dayCode === "F") daysMap.Friday.push(scheduleEntry);
+                        else if (dayCode === "S") daysMap.Saturday.push(scheduleEntry);
+                        i += 1;
+                    }
+                }
+            }
         }
-      }
     }
-  }
-  return { daysMapData: daysMap, sectionName: extractedSectionName };
+    return { daysMapData: daysMap, sectionName: backendData.sectionName || "" };
 }
+
 function convertTo24HourTime(timeString) {
-  if (!timeString || typeof timeString !== "string") return 0;
-  const timeLower = timeString.toLowerCase().trim();
-  const match = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*(am|pm)/);
-  if (!match) return 0;
-  const hourMinPart = match[1]; const period = match[2];
-  let [hourStr, minuteStr] = hourMinPart.split(":");
-  let hour = parseInt(hourStr, 10); let minute = minuteStr ? parseInt(minuteStr, 10) : 0;
-  if (isNaN(hour) || isNaN(minute)) return 0;
-  if (period === "pm" && hour !== 12) hour += 12; else if (period === "am" && hour === 12) hour = 0;
-  return hour * 60 + minute;
+    if (!timeString || typeof timeString !== "string") return 0;
+    const timeLower = timeString.toLowerCase().trim();
+    const match = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*(am|pm)/);
+    if (!match) return 0;
+    const hourMinPart = match[1]; const period = match[2];
+    let [hourStr, minuteStr] = hourMinPart.split(":");
+    let hour = parseInt(hourStr, 10); let minute = minuteStr ? parseInt(minuteStr, 10) : 0;
+    if (isNaN(hour) || isNaN(minute)) return 0;
+    if (period === "pm" && hour !== 12) hour += 12; else if (period === "am" && hour === 12) hour = 0;
+    return hour * 60 + minute;
 }
+
 const sortByTime = (a, b) => {
-  function extractActualStartTime(fullTimeStr) {
-    if (!fullTimeStr || typeof fullTimeStr !== "string") return "";
-    let match = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
-    if (match && match[1]) return match[1].trim();
-    const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/);
-    if (firstPartMatch && firstPartMatch[1]) {
-      const numericStart = firstPartMatch[1];
-      const periodMatch = fullTimeStr.match(/(am|pm)\s*$/i);
-      if (periodMatch && periodMatch[1]) return `${numericStart} ${periodMatch[1]}`;
-      return numericStart;
+    function extractActualStartTime(fullTimeStr) {
+        if (!fullTimeStr || typeof fullTimeStr !== "string") return "";
+        let match = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+        if (match && match[1]) return match[1].trim();
+        const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/);
+        if (firstPartMatch && firstPartMatch[1]) {
+            const numericStart = firstPartMatch[1];
+            const periodMatch = fullTimeStr.match(/(am|pm)\s*$/i);
+            if (periodMatch && periodMatch[1]) return `${numericStart} ${periodMatch[1]}`;
+            return numericStart;
+        }
+        return fullTimeStr.split("-")[0].trim();
     }
-    return fullTimeStr.split("-")[0].trim();
-  }
-  return convertTo24HourTime(extractActualStartTime(a.time)) - convertTo24HourTime(extractActualStartTime(b.time));
+    return convertTo24HourTime(extractActualStartTime(a.time)) - convertTo24HourTime(extractActualStartTime(b.time));
 };
+
 function generateWebDisplayHTML(daysMap) {
-  let htmlContent = "<div style='padding: 10px; background-color: #fff; border: 1px solid #e0e0e0; margin-top:10px;'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: #555;'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: #f8f8f8;'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Room</th></tr></thead><tbody>";
-  const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  for (const day of daysOrder) {
-    const daySchedule = daysMap[day]?.sort(sortByTime) || [];
-    const daySubjects = daySchedule.map((item) => `${item.subject} (${item.time})`).join("<br>");
-    const dayRooms = daySchedule.map((item) => item.room).join("<br>");
-    htmlContent += `<tr><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee; font-weight: bold;'>${day}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${daySubjects||" "}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${dayRooms||" "}</td></tr>`;
-  }
-  return htmlContent + "</tbody></table></div>";
+    let htmlContent = "<div style='padding: 10px; background-color: #fff; border: 1px solid #e0e0e0; margin-top:10px;'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: #555;'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: #f8f8f8;'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Room</th></tr></thead><tbody>";
+    const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    for (const day of daysOrder) {
+        const daySchedule = daysMap[day]?.sort(sortByTime) || [];
+        const daySubjects = daySchedule.map((item) => `${item.subject} (${item.time})`).join("<br>");
+        const dayRooms = daySchedule.map((item) => item.room).join("<br>");
+        htmlContent += `<tr><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee; font-weight: bold;'>${day}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${daySubjects||" "}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${dayRooms||" "}</td></tr>`;
+    }
+    return htmlContent + "</tbody></table></div>";
 }
+
 function displayHTMLContent(htmlContent) { excelPreview.innerHTML = htmlContent; }
 
-
-// --- FINAL, "SMART GRID" CANVAS DRAWING ENGINE ---
 function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath(); ctx.moveTo(x + radius, y);
     ctx.lineTo(x + width - radius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
@@ -192,7 +198,7 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 function measureCardContentHeight(ctx, schedule, contentWidth, layout, fonts, fontFamily) {
     let height = fonts.dayTitle.size + (fonts.dayTitle.size * 0.6) + (fonts.dayTitle.size * 1.2);
-    if (schedule.length === 0) { height += fonts.details.size; } 
+    if (schedule.length === 0) { height += fonts.details.size; }
     else {
         for (const item of schedule) {
             ctx.font = `${fonts.subject.weight} ${fonts.subject.size}px ${fontFamily}`;
@@ -215,10 +221,9 @@ function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, pa
     ctx.fillStyle = palette.cardBg; drawRoundedRect(ctx, x, y, width, height, layout.cardRadius);
     ctx.shadowColor = 'transparent'; ctx.textAlign = 'left';
     const contentX = x + layout.cardPadding; const contentWidth = width - layout.cardPadding * 2;
-    
-    // This is now a top-aligned layout, not vertically centered.
+
     let currentY = y + layout.cardPadding;
-    
+
     ctx.fillStyle = palette.dayTitle; ctx.font = `${fonts.dayTitle.weight} ${fonts.dayTitle.size}px ${fontFamily}`;
     ctx.fillText(dayName.toUpperCase(), contentX, currentY);
     currentY += fonts.dayTitle.size + (fonts.dayTitle.size * 0.6);
@@ -254,7 +259,6 @@ async function drawScheduleOnCanvas(ctx, options) {
     const palette = { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#3A506B', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' };
     const fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
 
-    // --- 1. DEFINE IDEAL METRICS ---
     const idealBaseFontSize = isPortrait ? width / 35 : 28;
     const idealLayout = {
         padding: isPortrait ? width * 0.08 : 70,
@@ -269,7 +273,6 @@ async function drawScheduleOnCanvas(ctx, options) {
         details: { size: idealBaseFontSize * 0.9, weight: 400 },
     };
 
-    // --- 2. PRE-CALCULATE REQUIRED HEIGHT & SCALING ---
     const idealCardWidth = (width - idealLayout.padding * 2 - idealLayout.gap * (gridConfig.cols - 1)) / gridConfig.cols;
     const contentWidth = idealCardWidth - idealLayout.cardPadding * 2;
     let idealRowHeights = [];
@@ -290,7 +293,6 @@ async function drawScheduleOnCanvas(ctx, options) {
     const availableHeight = height - titleAreaHeight - idealLayout.padding;
     const scale = Math.min(1.0, availableHeight / totalIdealGridHeight);
 
-    // --- 3. CREATE FINAL, SCALED METRICS ---
     const finalLayout = Object.fromEntries(Object.entries(idealLayout).map(([k, v]) => [k, v * scale]));
     finalLayout.padding = idealLayout.padding;
     const finalFonts = {
@@ -300,8 +302,7 @@ async function drawScheduleOnCanvas(ctx, options) {
         subject: { size: idealFonts.subject.size * scale, weight: 600 },
         details: { size: idealFonts.details.size * scale, weight: 400 },
     };
-    
-    // --- 4. DRAWING ---
+
     ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = palette.title; ctx.font = `${finalFonts.title.weight} ${finalFonts.title.size}px ${fontFamily}`;
     ctx.textAlign = 'center'; const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
@@ -321,7 +322,6 @@ async function drawScheduleOnCanvas(ctx, options) {
                 const dayName = daysOrder[dayIndex];
                 const daySchedule = data[dayName]?.sort(sortByTime) || [];
                 const cardX = gridStartX + c * (finalCardWidth + finalLayout.gap);
-                // Call the updated top-aligned drawCard function
                 drawCard(ctx, dayName, daySchedule, cardX, currentY, finalCardWidth, rowHeight, finalLayout, finalFonts, palette, fontFamily);
             }
         }
@@ -329,66 +329,64 @@ async function drawScheduleOnCanvas(ctx, options) {
     }
 }
 
-
-// --- IMAGE EXPORT FUNCTION ---
 async function exportScheduleToImage() {
-  if (!currentProcessedData || !currentProcessedData.daysMapData) {
-    alert("No schedule data to export. Please upload a file first.");
-    return;
-  }
-  const currentSectionName = currentProcessedData.sectionName || "";
-
-  const dpr = window.devicePixelRatio || 1;
-
-  const targetImageWidth = screen.width * dpr;
-  const targetImageHeight = screen.height * dpr;
-  const isPortraitView = targetImageHeight > targetImageWidth;
-  const filenameSuffix = `${targetImageWidth}x${targetImageHeight}_wallpaper`;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = targetImageWidth;
-  canvas.height = targetImageHeight;
-  const ctx = canvas.getContext('2d');
-
-  try {
-    if (exportButton) {
-      exportButton.textContent = "Generating Wallpaper...";
-      exportButton.disabled = true;
+    if (!currentProcessedData || !currentProcessedData.daysMapData) {
+        alert("No schedule data to export. Please upload a file first.");
+        return;
     }
-    
-    await drawScheduleOnCanvas(ctx, {
-        width: targetImageWidth,
-        height: targetImageHeight,
-        isPortrait: isPortraitView,
-        data: currentProcessedData.daysMapData,
-        sectionName: currentSectionName
-    });
+    const currentSectionName = currentProcessedData.sectionName || "";
 
-    const imageDataURL = canvas.toDataURL("image/png");
-    let downloadFilename = `schedule_wallpaper_${filenameSuffix}.png`;
-    if (currentSectionName) {
-      const sanitizedSectionName = currentSectionName.replace(/[^a-z0-9_\-]/gi, "_").replace(/_{2,}/g, "_");
-      downloadFilename = `schedule_${sanitizedSectionName}_${filenameSuffix}.png`;
-    }
-    const downloadLink = document.createElement("a");
-    downloadLink.href = imageDataURL;
-    downloadLink.download = downloadFilename;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    const dpr = window.devicePixelRatio || 1;
 
-  } catch (error) {
-    console.error("Error exporting to image:", error);
-    alert("Failed to export image. See console for details.");
-  } finally {
-    if (exportButton) {
-      exportButton.textContent = "Export as Wallpaper";
-      const hasData = currentProcessedData?.daysMapData && Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
-      exportButton.disabled = !hasData;
+    const targetImageWidth = screen.width * dpr;
+    const targetImageHeight = screen.height * dpr;
+    const isPortraitView = targetImageHeight > targetImageWidth;
+    const filenameSuffix = `${targetImageWidth}x${targetImageHeight}_wallpaper`;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetImageWidth;
+    canvas.height = targetImageHeight;
+    const ctx = canvas.getContext('2d');
+
+    try {
+        if (exportButton) {
+            exportButton.textContent = "Generating Wallpaper...";
+            exportButton.disabled = true;
+        }
+
+        await drawScheduleOnCanvas(ctx, {
+            width: targetImageWidth,
+            height: targetImageHeight,
+            isPortrait: isPortraitView,
+            data: currentProcessedData.daysMapData,
+            sectionName: currentSectionName
+        });
+
+        const imageDataURL = canvas.toDataURL("image/png");
+        let downloadFilename = `schedule_wallpaper_${filenameSuffix}.png`;
+        if (currentSectionName) {
+            const sanitizedSectionName = currentSectionName.replace(/[^a-z0-9_\-]/gi, "_").replace(/_{2,}/g, "_");
+            downloadFilename = `schedule_${sanitizedSectionName}_${filenameSuffix}.png`;
+        }
+        const downloadLink = document.createElement("a");
+        downloadLink.href = imageDataURL;
+        downloadLink.download = downloadFilename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+    } catch (error) {
+        console.error("Error exporting to image:", error);
+        alert("Failed to export image. See console for details.");
+    } finally {
+        if (exportButton) {
+            exportButton.textContent = "Export as Wallpaper";
+            const hasData = currentProcessedData?.daysMapData && Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
+            exportButton.disabled = !hasData;
+        }
     }
-  }
 }
 
 if (exportButton) {
-  exportButton.addEventListener("click", exportScheduleToImage);
+    exportButton.addEventListener("click", exportScheduleToImage);
 }
