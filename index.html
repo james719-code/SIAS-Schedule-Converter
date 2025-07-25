@@ -1,104 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIAS Schedule Adjust</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIAS Schedule Adjust</title>
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <!-- Navigation Bar -->
 <header>
-  <nav class="navbar">
-    <div class="logo">Schedule</div>
-    <ul class="nav-links">
-      <li><a href="#home">Home</a></li>
-      <li><a href="#upload">Upload</a></li>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#about">About</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
-    <div class="hamburger" id="hamburger">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </nav>
+    <nav class="navbar">
+        <div class="logo">Schedule</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#upload">Upload</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+        <div class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
 </header>
 
 <!-- Hero Section -->
 <section id="home" class="hero">
-  <div class="hero-content">
-    <h1>Welcome to SIAS Schedule Organizer</h1>
-    <p>"Your Schedule, Simplified and Organized with Us!"</p>
-  </div>
+    <div class="hero-content">
+        <h1>Welcome to SIAS Schedule Organizer</h1>
+        <p>"Your Schedule, Simplified and Organized with Us!"</p>
+    </div>
 </section>
 
 <!-- PDF Upload Section -->
 <section id="upload" class="upload-section">
-  <h2>Upload Your PDF Schedule</h2>
-  <div class="pdf-upload-container" id="pdf-upload-container">
-    <input type="file" id="xlsx-upload" accept="application/pdf" hidden />
-    <div class="drag-drop-area" id="drag-drop-area">
-      <p>Drag & Drop your PDF file here or click to browse.</p>
+    <h2>Upload Your PDF Schedule</h2>
+    <div class="pdf-upload-container" id="pdf-upload-container">
+        <input type="file" id="xlsx-upload" accept="application/pdf" hidden />
+        <div class="drag-drop-area" id="drag-drop-area">
+            <p>Drag & Drop your PDF file here or click to browse.</p>
+        </div>
     </div>
-  </div>
-  <div id="excel-preview"></div>
-  <div class="theme-selector">
-    <h3>Choose a Theme:</h3>
-    <div class="theme-buttons">
-      <button class="theme-btn" data-theme="default">Default</button>
-      <button class="theme-btn" data-theme="dark">Dark</button>
-      <button class="theme-btn" data-theme="lightning">Lightning</button>
-      <button class="theme-btn" data-theme="soft-pink">Pink</button>
-      <button class="theme-btn" data-theme="autumn">Autumn</button>
-      <button class="theme-btn" data-theme="winter">Winter</button>
-      <button class="theme-btn" data-theme="summer">Summer</button>
-      <button class="theme-btn" data-theme="sakura">Sakura</button>
+    <div id="excel-preview"></div>
+    <div class="theme-selector">
+        <h3>Choose a Theme:</h3>
+        <div class="theme-buttons">
+            <button class="theme-btn" data-theme="default">Default</button>
+            <button class="theme-btn" data-theme="dark">Dark</button>
+            <button class="theme-btn" data-theme="maroon">Maroon</button>
+            <button class="theme-btn" data-theme="wisteria">Wisteria</button>
+            <button class="theme-btn" data-theme="soft-pink">Pink</button>
+            <button class="theme-btn" data-theme="autumn">Autumn</button>
+            <button class="theme-btn" data-theme="winter">Winter</button>
+            <button class="theme-btn" data-theme="summer">Summer</button>
+            <button class="theme-btn" data-theme="sakura">Sakura</button>
+        </div>
     </div>
-  </div>
-  <button id="export-image-btn" disabled>Export Schedule as Image</button>
+    <button id="export-image-btn" disabled>Export Schedule as Image</button>
 </section>
 
 <!-- Guide Section -->
 <section id="guide" class="guide">
-  <h2>How to Use</h2>
-  <ol>
-    <li>
-      Download the "Certificate of Enrollment" PDF file of your schedule
-      from the SIAS portal.
-    </li>
-    <li>
-      Drag and drop that PDF file directly into the upload section above, or
-      click to browse for it.
-    </li>
-    <li>Your organized weekly schedule will appear as a preview.</li>
-    <li>
-      Select your favorite theme and click the "Export Schedule as Image" button to save it.
-    </li>
-  </ol>
+    <h2>How to Use</h2>
+    <ol>
+        <li>
+            Download the "Certificate of Enrollment" PDF file of your schedule
+            from the SIAS portal.
+        </li>
+        <li>
+            Drag and drop that PDF file directly into the upload section above, or
+            click to browse for it.
+        </li>
+        <li>Your organized weekly schedule will appear as a preview.</li>
+        <li>
+            Select your favorite theme and click the "Export Schedule as Image" to save it as a high-quality wallpaper.
+        </li>
+    </ol>
 </section>
 
 <!-- Features Section -->
 <section id="features" class="features">
-  <h2>Features</h2>
-  <div class="feature-cards">
-    <div class="card">
-      <h3>Thematic Export</h3>
-      <p>Export your schedule as a beautiful wallpaper that matches your chosen theme.</p>
+    <h2>Features</h2>
+    <div class="feature-cards">
+        <div class="card">
+            <h3>Thematic Export</h3>
+            <p>Export your schedule as a beautiful wallpaper with a background that matches your chosen theme.</p>
+        </div>
+        <div class="card">
+            <h3>Modern UI</h3>
+            <p>Clean and stylish design with multiple themes, including new Maroon and Wisteria styles.</p>
+        </div>
+        <div class="card">
+            <h3>Direct PDF Parsing</h3>
+            <p>
+                Directly processes your schedule PDF, eliminating the need for
+                manual file conversion.
+            </p>
+        </div>
     </div>
-    <div class="card">
-      <h3>Modern UI</h3>
-      <p>Clean and stylish design with multiple themes like Dark, Lightning, and seasonal styles.</p>
-    </div>
-    <div class="card">
-      <h3>Direct PDF Parsing</h3>
-      <p>
-        Directly processes your schedule PDF, eliminating the need for
-        manual file conversion.
-      </p>
-    </div>
-  </div>
 </section>
 
 <section
@@ -106,22 +107,22 @@
         class="guide"
         style="display: flex; align-items: center; flex-direction: column"
 >
-  <h3>Contact Me</h3>
-  <p>For inquiries or more information about this project, please feel free to contact us.</p>
-  <div class="contact-info">
-    <p>
-      <a
-              href="https://mail.google.com/mail/?view=cm&fs=1&to=sentilecesjames@gmail.com"
-              target="_blank"
-      >EMAIL</a
-      >
-    </p>
-  </div>
+    <h3>Contact Me</h3>
+    <p>For inquiries or more information about this project, please feel free to contact us.</p>
+    <div class="contact-info">
+        <p>
+            <a
+                    href="https://mail.google.com/mail/?view=cm&fs=1&to=sentilecesjames@gmail.com"
+                    target="_blank"
+            >EMAIL</a
+            >
+        </p>
+    </div>
 </section>
 
 <!-- Footer -->
 <footer id="footer">
-  <p>© 2025 James Ryan S. Gallego. All Rights Reserved.</p>
+    <p>© 2025 James Ryan S. Gallego. All Rights Reserved.</p>
 </footer>
 
 <!-- Script Libraries -->

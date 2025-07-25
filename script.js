@@ -179,7 +179,7 @@ const sortByTime = (a, b) => {
 };
 
 function generateWebDisplayHTML(daysMap) {
-    let htmlContent = "<div id='preview-wrapper' style='padding: 10px; background-color: var(--card-background); border: var(--card-border); margin-top:10px; border-radius: 8px; animation: var(--card-animation);'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: var(--text-color);'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: var(--secondary-color);'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Room</th></tr></thead><tbody>";
+    let htmlContent = "<div id='preview-wrapper' style='padding: 10px; background-color: var(--card-background); border: var(--card-border); margin-top:10px; border-radius: 8px;'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: var(--text-color);'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: var(--secondary-color);'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Room</th></tr></thead><tbody>";
     const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     for (const day of daysOrder) {
         const daySchedule = daysMap[day]?.sort(sortByTime) || [];
@@ -237,7 +237,7 @@ function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, pa
         // Redraw rounded rect for stroke
         ctx.beginPath(); ctx.moveTo(x + layout.cardRadius, y);
         ctx.lineTo(x + width - layout.cardRadius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + layout.cardRadius);
-        ctx.lineTo(x + width, y + height - layout.cardRadius); ctx.quadraticCurveTo(x + width, y + height, x + width - layout.cardRadius, y + height);
+        ctx.lineTo(x + width, y + height - layout.cardRadius); ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
         ctx.lineTo(x + layout.cardRadius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - layout.cardRadius);
         ctx.lineTo(x, y + layout.cardRadius); ctx.quadraticCurveTo(x, y, x + layout.cardRadius, y);
         ctx.closePath(); ctx.stroke();
@@ -283,14 +283,8 @@ async function drawScheduleOnCanvas(ctx, options) {
     const themes = {
         default: { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#3A506B', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' },
         dark: { bg: '#121212', cardBg: '#1E1E1E', shadow: 'rgba(0, 0, 0, 0.5)', title: '#E0E0E0', dayTitle: '#1E90FF', subject: '#E0E0E0', details: '#B0B0B0', separator: '#2A2A2A' },
-        lightning: {
-            bg: '#000010', // Fallback color
-            bgGradient: { start: '#020024', mid: '#090979', end: '#000010' },
-            cardBg: 'rgba(10, 25, 47, 0.5)',
-            cardBorder: 'rgba(0, 255, 255, 0.3)',
-            shadow: 'rgba(0, 255, 255, 0.3)',
-            title: '#FFFFFF', dayTitle: '#00FFFF', subject: '#EAEAEA', details: '#A0D8D8', separator: 'rgba(0, 255, 255, 0.2)'
-        },
+        maroon: { bg: '#FDF5E6', cardBg: '#FFFFFF', shadow: 'rgba(128, 0, 0, 0.1)', title: '#800000', dayTitle: '#A52A2A', subject: '#4B3832', details: '#6F4E37', separator: '#EAE0D3' },
+        wisteria: { bg: '#F5F3F7', cardBg: '#FFFFFF', shadow: 'rgba(155, 137, 179, 0.15)', title: '#9B89B3', dayTitle: '#8A799D', subject: '#3D3C42', details: '#5A5863', separator: '#E6E0F0' },
         'soft-pink': { bg: '#fff0f5', cardBg: '#FFFFFF', shadow: 'rgba(255, 105, 180, 0.1)', title: '#ff69b4', dayTitle: '#333', subject: '#333', details: '#555', separator: '#ffc0cb' },
         autumn: { bg: '#fdf6e8', cardBg: '#FEFBF6', shadow: 'rgba(136, 103, 54, 0.15)', title: '#D88C22', dayTitle: '#886736', subject: '#4D4030', details: '#6B5B47', separator: '#F7E7D4' },
         winter: { bg: '#F0F4F8', cardBg: '#FFFFFF', shadow: 'rgba(74, 144, 226, 0.1)', title: '#4A90E2', dayTitle: '#2F3B4B', subject: '#2F3B4B', details: '#5A6B7B', separator: '#EBF2FA' },
@@ -301,22 +295,41 @@ async function drawScheduleOnCanvas(ctx, options) {
     const palette = themes[theme] || themes.default;
     const fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
 
-    // --- Draw Background ---
-    if (theme === 'lightning' && palette.bgGradient) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, palette.bgGradient.start);
-        gradient.addColorStop(0.35, palette.bgGradient.mid);
-        gradient.addColorStop(1, palette.bgGradient.end);
-        ctx.fillStyle = gradient;
-    } else {
-        ctx.fillStyle = palette.bg;
-    }
+    // --- Draw Thematic Backgrounds ---
+    ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
+
+    const imageThemes = {
+        summer: 'img/summer.jpg',
+        autumn: 'img/autumn.jpg',
+        winter: 'img/winter.jpg',
+        sakura: 'img/sakura.jpg'
+    };
+
+    let backgroundPromise = Promise.resolve();
+
+    if (imageThemes[theme]) {
+        backgroundPromise = new Promise((resolve) => {
+            const bgImage = new Image();
+            bgImage.src = imageThemes[theme];
+            bgImage.onload = () => {
+                ctx.drawImage(bgImage, 0, 0, width, height);
+                resolve();
+            };
+            bgImage.onerror = () => {
+                console.error(`Failed to load ${imageThemes[theme]}. Using fallback color.`);
+                ctx.fillStyle = palette.bg;
+                ctx.fillRect(0, 0, width, height);
+                resolve();
+            };
+        });
+    }
+
+    await backgroundPromise;
 
     const idealBaseFontSize = isPortrait ? width / 35 : 28;
     const idealLayout = {
-        padding: isPortrait ? width * 0.08 : 70,
-        gap: isPortrait ? width * 0.05 : 35,
+        padding: isPortrait ? width * 0.08 : 70, gap: isPortrait ? width * 0.05 : 35,
         cardRadius: 16, cardPadding: isPortrait ? width * 0.06 : 35,
         entryGap: idealBaseFontSize * 1.4,
     };
@@ -363,12 +376,12 @@ async function drawScheduleOnCanvas(ctx, options) {
     ctx.textAlign = 'center';
     const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
     const titleY = finalLayout.padding + finalFonts.title.size;
-    ctx.shadowColor = palette.shadow;
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
     ctx.fillText(mainTitle, width / 2, titleY);
-    ctx.shadowColor = 'transparent'; // Reset shadow
+    ctx.shadowColor = 'transparent';
 
     let currentY = titleY + finalFonts.title.size * 1.5;
     const finalCardWidth = idealCardWidth * scale;
@@ -388,6 +401,18 @@ async function drawScheduleOnCanvas(ctx, options) {
         }
         currentY += rowHeight + finalLayout.gap;
     }
+
+    // --- ADD WATERMARK ---
+    ctx.save();
+    const watermarkSize = finalFonts.details.size * 1.2;
+    ctx.font = `italic ${watermarkSize}px ${fontFamily}`;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+    ctx.shadowBlur = 3;
+    ctx.fillText("James Ryan", width - finalLayout.padding, height - finalLayout.padding);
+    ctx.restore();
 }
 
 async function exportScheduleToImage() {
