@@ -1,22 +1,20 @@
 // --- Configuration ---
-// The URL of your Python backend deployed on Render.
-const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf'; // <-- UPDATED
-
-// The API_KEY is no longer needed for the Render backend.
+const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
 const uploadInput = document.getElementById("xlsx-upload");
 const dragDropArea = document.getElementById("drag-drop-area");
 const excelPreview = document.getElementById("excel-preview");
 const exportButton = document.getElementById("export-image-btn");
+const themeButtons = document.querySelectorAll(".theme-btn");
 
 let currentProcessedData = null;
 
-// --- Event Listeners (Unchanged) ---
+// --- Event Listeners ---
 dragDropArea.addEventListener("click", () => uploadInput.click());
 uploadInput.addEventListener("change", (e) => handleFileSelect(e.target.files[0]));
 dragDropArea.addEventListener("dragover", (e) => {
     e.preventDefault();
-    dragDropArea.style.backgroundColor = "#f4f4f4";
+    dragDropArea.style.backgroundColor = "var(--secondary-color)";
 });
 dragDropArea.addEventListener("dragleave", () => {
     dragDropArea.style.backgroundColor = "";
@@ -28,13 +26,31 @@ dragDropArea.addEventListener("drop", (e) => {
     dragDropArea.style.backgroundColor = "";
 });
 
+themeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const theme = button.dataset.theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        themeButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+    });
+});
+
+// Apply saved theme on load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'default';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const activeButton = document.querySelector(`.theme-btn[data-theme="${savedTheme}"]`);
+    if(activeButton) {
+        activeButton.classList.add('active');
+    }
+});
+
 
 // =========================================================================
-// --- CORE FILE HANDLING (UPDATED FOR RENDER/FLASK BACKEND) ---
+// --- CORE FILE HANDLING ---
 // =========================================================================
 async function handleFileSelect(file) {
-    // Your file validation logic remains the same...
-    console.log("File object received:", file);
     if (!file) {
         showError("No file was selected.");
         return;
@@ -48,7 +64,7 @@ async function handleFileSelect(file) {
         return;
     }
 
-    currentProcessedData = null; // Reset data
+    currentProcessedData = null;
     excelPreview.innerHTML = "<p>Uploading and processing PDF...</p>";
     if (exportButton) exportButton.disabled = true;
 
@@ -59,19 +75,14 @@ async function handleFileSelect(file) {
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             body: formData,
-            // --- UPDATED ---
-            // No special headers are needed anymore. The browser will automatically
-            // set the Content-Type to multipart/form-data.
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            // The "data.error" comes from the jsonify({ "error": ... }) in your Flask app
             throw new Error(data.error || `Server responded with status ${response.status}`);
         }
 
-        // ... The rest of your success logic is perfect and does not need to change ...
         const transformedData = transformBackendDataToDaysMap(data);
         currentProcessedData = transformedData;
         const webHtml = generateWebDisplayHTML(currentProcessedData.daysMapData);
@@ -87,12 +98,6 @@ async function handleFileSelect(file) {
         showError(error.message);
     }
 }
-
-// ... THE REST OF YOUR JAVASCRIPT FILE ...
-// All of your other functions (showError, transformBackendDataToDaysMap,
-// generateWebDisplayHTML, and all the canvas drawing functions)
-// are perfect and DO NOT need to be changed.
-// Just scroll to the bottom of your file to make sure everything below this point is still there.
 
 function showError(message) {
     excelPreview.innerHTML = `<p style="color:red; font-weight:bold;">Error: ${message}</p>`;
@@ -174,13 +179,13 @@ const sortByTime = (a, b) => {
 };
 
 function generateWebDisplayHTML(daysMap) {
-    let htmlContent = "<div style='padding: 10px; background-color: #fff; border: 1px solid #e0e0e0; margin-top:10px;'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: #555;'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: #f8f8f8;'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid #ddd;'>Room</th></tr></thead><tbody>";
+    let htmlContent = "<div id='preview-wrapper' style='padding: 10px; background-color: var(--card-background); border: var(--card-border); margin-top:10px; border-radius: 8px; animation: var(--card-animation);'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: var(--text-color);'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: var(--secondary-color);'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Room</th></tr></thead><tbody>";
     const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     for (const day of daysOrder) {
         const daySchedule = daysMap[day]?.sort(sortByTime) || [];
         const daySubjects = daySchedule.map((item) => `${item.subject} (${item.time})`).join("<br>");
         const dayRooms = daySchedule.map((item) => item.room).join("<br>");
-        htmlContent += `<tr><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee; font-weight: bold;'>${day}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${daySubjects||" "}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid #eee;'>${dayRooms||" "}</td></tr>`;
+        htmlContent += `<tr><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); font-weight: bold; color: var(--text-color);'>${day}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); color: var(--text-color);'>${daySubjects||" "}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); color: var(--text-color);'>${dayRooms||" "}</td></tr>`;
     }
     return htmlContent + "</tbody></table></div>";
 }
@@ -216,12 +221,30 @@ function measureCardContentHeight(ctx, schedule, contentWidth, layout, fonts, fo
 }
 
 function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, palette, fontFamily) {
-    ctx.shadowColor = palette.shadow; ctx.shadowBlur = 20 * (fonts.base / 24);
-    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 5 * (fonts.base / 24);
-    ctx.fillStyle = palette.cardBg; drawRoundedRect(ctx, x, y, width, height, layout.cardRadius);
-    ctx.shadowColor = 'transparent'; ctx.textAlign = 'left';
-    const contentX = x + layout.cardPadding; const contentWidth = width - layout.cardPadding * 2;
+    ctx.shadowColor = palette.shadow;
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 5;
 
+    ctx.fillStyle = palette.cardBg;
+    drawRoundedRect(ctx, x, y, width, height, layout.cardRadius);
+
+    ctx.shadowColor = 'transparent'; // Reset shadow for other elements
+
+    if (palette.cardBorder) {
+        ctx.strokeStyle = palette.cardBorder;
+        ctx.lineWidth = 1;
+        // Redraw rounded rect for stroke
+        ctx.beginPath(); ctx.moveTo(x + layout.cardRadius, y);
+        ctx.lineTo(x + width - layout.cardRadius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + layout.cardRadius);
+        ctx.lineTo(x + width, y + height - layout.cardRadius); ctx.quadraticCurveTo(x + width, y + height, x + width - layout.cardRadius, y + height);
+        ctx.lineTo(x + layout.cardRadius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - layout.cardRadius);
+        ctx.lineTo(x, y + layout.cardRadius); ctx.quadraticCurveTo(x, y, x + layout.cardRadius, y);
+        ctx.closePath(); ctx.stroke();
+    }
+
+    ctx.textAlign = 'left';
+    const contentX = x + layout.cardPadding; const contentWidth = width - layout.cardPadding * 2;
     let currentY = y + layout.cardPadding;
 
     ctx.fillStyle = palette.dayTitle; ctx.font = `${fonts.dayTitle.weight} ${fonts.dayTitle.size}px ${fontFamily}`;
@@ -253,11 +276,42 @@ function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, pa
 }
 
 async function drawScheduleOnCanvas(ctx, options) {
-    const { width, height, isPortrait, data, sectionName } = options;
+    const { width, height, isPortrait, data, sectionName, theme } = options;
     const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const gridConfig = { cols: isPortrait ? 2 : 3, rows: isPortrait ? 3 : 2 };
-    const palette = { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#3A506B', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' };
+
+    const themes = {
+        default: { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#3A506B', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' },
+        dark: { bg: '#121212', cardBg: '#1E1E1E', shadow: 'rgba(0, 0, 0, 0.5)', title: '#E0E0E0', dayTitle: '#1E90FF', subject: '#E0E0E0', details: '#B0B0B0', separator: '#2A2A2A' },
+        lightning: {
+            bg: '#000010', // Fallback color
+            bgGradient: { start: '#020024', mid: '#090979', end: '#000010' },
+            cardBg: 'rgba(10, 25, 47, 0.5)',
+            cardBorder: 'rgba(0, 255, 255, 0.3)',
+            shadow: 'rgba(0, 255, 255, 0.3)',
+            title: '#FFFFFF', dayTitle: '#00FFFF', subject: '#EAEAEA', details: '#A0D8D8', separator: 'rgba(0, 255, 255, 0.2)'
+        },
+        'soft-pink': { bg: '#fff0f5', cardBg: '#FFFFFF', shadow: 'rgba(255, 105, 180, 0.1)', title: '#ff69b4', dayTitle: '#333', subject: '#333', details: '#555', separator: '#ffc0cb' },
+        autumn: { bg: '#fdf6e8', cardBg: '#FEFBF6', shadow: 'rgba(136, 103, 54, 0.15)', title: '#D88C22', dayTitle: '#886736', subject: '#4D4030', details: '#6B5B47', separator: '#F7E7D4' },
+        winter: { bg: '#F0F4F8', cardBg: '#FFFFFF', shadow: 'rgba(74, 144, 226, 0.1)', title: '#4A90E2', dayTitle: '#2F3B4B', subject: '#2F3B4B', details: '#5A6B7B', separator: '#EBF2FA' },
+        summer: { bg: '#FFFBEA', cardBg: '#FFFFFF', shadow: 'rgba(255, 199, 0, 0.2)', title: '#F57C00', dayTitle: '#D4A000', subject: '#5D4037', details: '#795548', separator: '#FFF8E1' },
+        sakura: { bg: '#FEF9FA', cardBg: '#FFFFFF', shadow: 'rgba(255, 183, 197, 0.2)', title: '#E895A5', dayTitle: '#D991A0', subject: '#5C474B', details: '#756367', separator: '#FFF5F7' }
+    };
+
+    const palette = themes[theme] || themes.default;
     const fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
+
+    // --- Draw Background ---
+    if (theme === 'lightning' && palette.bgGradient) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, palette.bgGradient.start);
+        gradient.addColorStop(0.35, palette.bgGradient.mid);
+        gradient.addColorStop(1, palette.bgGradient.end);
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = palette.bg;
+    }
+    ctx.fillRect(0, 0, width, height);
 
     const idealBaseFontSize = isPortrait ? width / 35 : 28;
     const idealLayout = {
@@ -303,11 +357,18 @@ async function drawScheduleOnCanvas(ctx, options) {
         details: { size: idealFonts.details.size * scale, weight: 400 },
     };
 
-    ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = palette.title; ctx.font = `${finalFonts.title.weight} ${finalFonts.title.size}px ${fontFamily}`;
-    ctx.textAlign = 'center'; const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
+    // --- Draw Title ---
+    ctx.fillStyle = palette.title;
+    ctx.font = `${finalFonts.title.weight} ${finalFonts.title.size}px ${fontFamily}`;
+    ctx.textAlign = 'center';
+    const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
     const titleY = finalLayout.padding + finalFonts.title.size;
+    ctx.shadowColor = palette.shadow;
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     ctx.fillText(mainTitle, width / 2, titleY);
+    ctx.shadowColor = 'transparent'; // Reset shadow
 
     let currentY = titleY + finalFonts.title.size * 1.5;
     const finalCardWidth = idealCardWidth * scale;
@@ -335,6 +396,7 @@ async function exportScheduleToImage() {
         return;
     }
     const currentSectionName = currentProcessedData.sectionName || "";
+    const selectedTheme = localStorage.getItem('theme') || 'default';
 
     const dpr = window.devicePixelRatio || 1;
 
@@ -359,14 +421,15 @@ async function exportScheduleToImage() {
             height: targetImageHeight,
             isPortrait: isPortraitView,
             data: currentProcessedData.daysMapData,
-            sectionName: currentSectionName
+            sectionName: currentSectionName,
+            theme: selectedTheme
         });
 
         const imageDataURL = canvas.toDataURL("image/png");
-        let downloadFilename = `schedule_wallpaper_${filenameSuffix}.png`;
+        let downloadFilename = `schedule_${selectedTheme}_${filenameSuffix}.png`;
         if (currentSectionName) {
             const sanitizedSectionName = currentSectionName.replace(/[^a-z0-9_\-]/gi, "_").replace(/_{2,}/g, "_");
-            downloadFilename = `schedule_${sanitizedSectionName}_${filenameSuffix}.png`;
+            downloadFilename = `schedule_${sanitizedSectionName}_${selectedTheme}_${filenameSuffix}.png`;
         }
         const downloadLink = document.createElement("a");
         downloadLink.href = imageDataURL;
