@@ -1,4 +1,5 @@
-// --- Configuration ---
+//Developed By: James Ryan S. Gallego
+
 const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
 const uploadInput = document.getElementById("xlsx-upload");
@@ -78,6 +79,7 @@ async function handleFileSelect(file) {
         });
 
         const data = await response.json();
+        console.log(data);
 
         if (!response.ok) {
             throw new Error(data.error || `Server responded with status ${response.status}`);
@@ -112,19 +114,28 @@ function transformBackendDataToDaysMap(backendData) {
         return { daysMapData: daysMap, sectionName: "" };
     }
 
+    // A more flexible regex that handles various time formats, including those with spaces.
+    // It captures the time part and the day part separately.
+    const scheduleRegex = /((?:\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm))|(?:\d{1,2}(?::\d{2})?-\d{1,2}(?::\d{2})?|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([MTWFHSaTh]+)/i;
+
+
     for (const subjectData of backendData.subjects) {
         for (const schedule of subjectData.schedules) {
-            const scheduleRegex = /((?:\d{1,2}(?::\d{2})?-\d{1,2}(?::\d{2})?|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([MTWFHSaTh]+)/i;
-            const match = schedule.time.match(scheduleRegex);
+            // 1. Clean the input strings to handle extra spaces from data extraction
+            const cleanedTime = schedule.time.replace(/\s+/g, ' ').replace(/(\d)\s*-\s*(\d)/g, '$1-$2').trim();
+            const cleanedSubject = subjectData.subject.replace(/\s+/g, ' ').trim();
+            const cleanedRoom = schedule.room.replace(/\s+/g, ' ').trim();
+
+            const match = cleanedTime.match(scheduleRegex);
 
             if (match) {
                 const timePart = match[1].trim();
                 const daysString = match[2].trim().toUpperCase();
 
                 const scheduleEntry = {
-                    subject: subjectData.subject,
+                    subject: cleanedSubject,
                     time: timePart,
-                    room: schedule.room,
+                    room: cleanedRoom,
                 };
 
                 let i = 0;
@@ -145,7 +156,9 @@ function transformBackendDataToDaysMap(backendData) {
             }
         }
     }
-    return { daysMapData: daysMap, sectionName: backendData.sectionName || "" };
+    // Clean the section name as well
+    const sectionName = backendData.sectionName ? backendData.sectionName.replace(/\s+/g, ' ').trim() : "";
+    return { daysMapData: daysMap, sectionName: sectionName };
 }
 
 function convertTo24HourTime(timeString) {
