@@ -114,30 +114,37 @@ function transformBackendDataToDaysMap(backendData) {
         return { daysMapData: daysMap, sectionName: "" };
     }
 
-    // A more flexible regex that handles various time formats, including those with spaces.
-    // It captures the time part and the day part separately.
-    const scheduleRegex = /((?:\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm))|(?:\d{1,2}(?::\d{2})?-\d{1,2}(?::\d{2})?|\d{1,2}-\d{1,2})\s*(?:am|pm))\s+([MTWFHSaTh]+)/i;
-
+    // This regex reliably finds day abbreviations at the very end of a string.
+    const dayRegex = /([MTWFHSaTh]+)$/i;
 
     for (const subjectData of backendData.subjects) {
-        for (const schedule of subjectData.schedules) {
-            // 1. Clean the input strings to handle extra spaces from data extraction
-            const cleanedTime = schedule.time.replace(/\s+/g, ' ').replace(/(\d)\s*-\s*(\d)/g, '$1-$2').trim();
-            const cleanedSubject = subjectData.subject.replace(/\s+/g, ' ').trim();
-            const cleanedRoom = schedule.room.replace(/\s+/g, ' ').trim();
+        // Clean the subject name. This replaces multiple spaces with a single one.
+        const cleanedSubject = subjectData.subject.replace(/\s+/g, ' ').trim();
 
-            const match = cleanedTime.match(scheduleRegex);
+        for (const schedule of subjectData.schedules) {
+            const originalTimeString = schedule.time;
+            const match = originalTimeString.match(dayRegex);
 
             if (match) {
-                const timePart = match[1].trim();
-                const daysString = match[2].trim().toUpperCase();
+                // 1. Isolate the day string (e.g., "M", "Th", "W") and uppercase it.
+                const daysString = match[1].toUpperCase();
+
+                // 2. Isolate the raw time part by taking everything before the day string.
+                const timePartRaw = originalTimeString.substring(0, match.index);
+
+                // 3. Clean the time part by removing ALL spaces.
+                const cleanedTimePart = timePartRaw.replace(/\s/g, '');
+
+                // 4. Clean the room name by REMOVING ALL spaces as requested.
+                const cleanedRoom = schedule.room.replace(/\s/g, '');
 
                 const scheduleEntry = {
                     subject: cleanedSubject,
-                    time: timePart,
-                    room: cleanedRoom,
+                    time: cleanedTimePart,
+                    room: cleanedRoom, // Use the space-free room name
                 };
 
+                // 5. Distribute the schedule entry into the correct day's array.
                 let i = 0;
                 while (i < daysString.length) {
                     if (daysString.substring(i, i + 2) === "TH") {
@@ -153,10 +160,13 @@ function transformBackendDataToDaysMap(backendData) {
                         i += 1;
                     }
                 }
+            } else {
+                // If a schedule time doesn't end with a day, log it as a warning.
+                console.warn(`Could not parse day from schedule time: "${originalTimeString}"`);
             }
         }
     }
-    // Clean the section name as well
+    // Clean the section name as well for consistent formatting.
     const sectionName = backendData.sectionName ? backendData.sectionName.replace(/\s+/g, ' ').trim() : "";
     return { daysMapData: daysMap, sectionName: sectionName };
 }
