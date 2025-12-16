@@ -3,134 +3,149 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIAS Schedule Adjust</title>
+    <title>SIAS Schedule Organizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-<!-- Navigation Bar -->
+<body data-theme="default">
+
+<!-- Navigation -->
 <header>
     <nav class="navbar">
-        <div class="logo">Schedule</div>
-        <ul class="nav-links">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#upload">Upload</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <span>SIAS<span class="text-highlight">Organizer</span></span>
+        </div>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#home" class="nav-link active">Home</a></li>
+            <li><a href="#generator" class="nav-link">Generator</a></li>
+            <li><a href="#features" class="nav-link">Features</a></li>
         </ul>
-        <div class="hamburger" id="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
+        <div class="nav-controls">
+            <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
+                <i class="fas fa-palette"></i>
+            </button>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
     </nav>
 </header>
 
 <!-- Hero Section -->
 <section id="home" class="hero">
+    <div class="hero-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
     <div class="hero-content">
-        <h1>Welcome to SIAS Schedule Organizer</h1>
-        <p>"Your Schedule, Simplified and Organized with Us!"</p>
+        <span class="badge-pill"><i class="fas fa-sparkles"></i> Updated for 2025</span>
+        <h1>Your Schedule, <br><span class="gradient-text">Reimagined.</span></h1>
+        <p class="hero-subtitle">Convert your boring SIAS PDF into a stunning, customizable wallpaper for your phone or desktop in seconds.</p>
+
+        <div class="hero-cta">
+            <a href="#generator" class="btn btn-primary btn-lg glow-effect">
+                Start Creating <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
     </div>
 </section>
 
-<!-- PDF Upload Section -->
-<section id="upload" class="upload-section">
-    <h2>Upload Your PDF Schedule</h2>
-    <div class="pdf-upload-container" id="pdf-upload-container">
-        <input type="file" id="xlsx-upload" accept="application/pdf" hidden />
-        <div class="drag-drop-area" id="drag-drop-area">
-            <p>Drag & Drop your PDF file here or click to browse.</p>
-        </div>
-    </div>
-    <div id="excel-preview"></div>
-    <div class="theme-selector">
-        <h3>Choose a Theme:</h3>
-        <div class="theme-buttons">
-            <button class="theme-btn" data-theme="default">Default</button>
-            <button class="theme-btn" data-theme="dark">Dark</button>
-            <button class="theme-btn" data-theme="maroon">Maroon</button>
-            <button class="theme-btn" data-theme="wisteria">Wisteria</button>
-            <button class="theme-btn" data-theme="soft-pink">Pink</button>
-            <button class="theme-btn" data-theme="autumn">Autumn</button>
-            <button class="theme-btn" data-theme="winter">Winter</button>
-            <button class="theme-btn" data-theme="summer">Summer</button>
-            <button class="theme-btn" data-theme="sakura">Sakura</button>
-        </div>
-    </div>
-    <button id="export-image-btn" disabled>Export Schedule as Image</button>
-</section>
+<!-- Generator Section -->
+<section id="generator" class="app-section">
+    <div class="container">
+        <div class="glass-panel upload-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-file-import"></i> Upload COE</h2>
+                <p>Select your PDF file to visualize your week.</p>
+            </div>
 
-<!-- Guide Section -->
-<section id="guide" class="guide">
-    <h2>How to Use</h2>
-    <ol>
-        <li>
-            Download the COE File ( Reports -> Enrolled Subjects -> COE Button ) of your schedule
-            from the SIAS portal.
-        </li>
-        <li>
-            Drag and drop that PDF file directly into the upload section above, or
-            click to browse for it.
-        </li>
-        <li>Your organized weekly schedule will appear as a preview.</li>
-        <li>
-            Select your favorite theme and click the "Export Schedule as Image" to save it as a high-quality wallpaper.
-        </li>
-    </ol>
+            <div class="drag-drop-area" id="drag-drop-area">
+                <input type="file" id="xlsx-upload" accept="application/pdf" hidden />
+                <div class="upload-content">
+                    <div class="icon-circle">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Drop PDF here</h3>
+                    <p>or <span class="browse-text">browse files</span></p>
+                    <span class="file-tag">.PDF only</span>
+                </div>
+            </div>
+
+            <div class="theme-selector-wrapper">
+                <span class="theme-label">Select Theme:</span>
+                <div class="color-swatches">
+                    <button class="theme-btn active" data-theme="default" style="background: #2563eb;" title="Ocean (Default)"></button>
+                    <button class="theme-btn" data-theme="dark" style="background: #1e293b;" title="Dark Mode"></button>
+                    <button class="theme-btn" data-theme="maroon" style="background: #800000;" title="Maroon"></button>
+                    <button class="theme-btn" data-theme="wisteria" style="background: #9333ea;" title="Wisteria"></button>
+                    <button class="theme-btn" data-theme="summer" style="background: #f59e0b;" title="Summer"></button>
+                    <button class="theme-btn" data-theme="sakura" style="background: #ec4899;" title="Sakura"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel preview-panel" id="preview-container">
+            <div class="panel-header-row">
+                <h3><i class="fas fa-calendar-week"></i> Weekly Preview</h3>
+                <div class="action-buttons">
+                    <button id="fullscreen-btn" class="btn btn-secondary btn-sm" disabled title="Toggle Full Screen">
+                        <i class="fas fa-expand"></i> <span class="btn-text">Full Screen</span>
+                    </button>
+                    <button id="export-image-btn" class="btn btn-primary btn-sm" disabled title="Download Image">
+                        <i class="fas fa-download"></i> <span class="btn-text">Download Wallpaper</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="excel-preview" class="schedule-output-area">
+                <div class="empty-state">
+                    <i class="fas fa-calendar-plus"></i>
+                    <p>Upload a file to see your schedule here</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </section>
 
 <!-- Features Section -->
-<section id="features" class="features">
-    <h2>Features</h2>
-    <div class="feature-cards">
-        <div class="card">
-            <h3>Thematic Export</h3>
-            <p>Export your schedule as a beautiful wallpaper with a background that matches your chosen theme.</p>
+<section id="features" class="features-section">
+    <div class="section-title">
+        <h2>Why use this tool?</h2>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card glass-card">
+            <i class="fas fa-magic feature-icon"></i>
+            <h3>Smart Parsing</h3>
+            <p>Automatically extracts subjects, times, and rooms from your SIAS COE structure.</p>
         </div>
-        <div class="card">
-            <h3>Modern UI</h3>
-            <p>Clean and stylish design with multiple themes, including new Maroon and Wisteria styles.</p>
+        <div class="feature-card glass-card">
+            <i class="fas fa-paint-brush feature-icon"></i>
+            <h3>Beautiful Themes</h3>
+            <p>Choose from varying color palettes to match your aesthetic.</p>
         </div>
-        <div class="card">
-            <h3>Direct PDF Parsing</h3>
-            <p>
-                Directly processes your schedule PDF, eliminating the need for
-                manual file conversion.
-            </p>
+        <div class="feature-card glass-card">
+            <i class="fas fa-mobile-alt feature-icon"></i>
+            <h3>Wallpaper Ready</h3>
+            <p>Exports high-definition images perfectly sized for your device.</p>
         </div>
     </div>
 </section>
 
-<section
-        id="contact"
-        class="guide"
-        style="display: flex; align-items: center; flex-direction: column"
->
-    <h3>Contact Me</h3>
-    <p>For inquiries or more information about this project, please feel free to contact us.</p>
-    <div class="contact-info">
-        <p>
-            <a
-                    href="https://mail.google.com/mail/?view=cm&fs=1&to=sentilecesjames@gmail.com"
-                    target="_blank"
-            >EMAIL</a
-            >
-        </p>
+<footer>
+    <div class="footer-content">
+        <p>&copy; 2025 James Ryan S. Gallego | SIAS Schedule Organizer</p>
     </div>
-</section>
-
-<!-- Footer -->
-<footer id="footer">
-    <p>© 2025 James Ryan S. Gallego. All Rights Reserved.</p>
 </footer>
 
-<!-- Script Libraries -->
-<script
-        defer
-        src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-></script>
-
-<script defer src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
