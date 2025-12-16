@@ -1,63 +1,114 @@
-//Developed By: James Ryan S. Gallego
+// Developed By: James Ryan S. Gallego
 
 const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
+// --- DOM Elements ---
 const uploadInput = document.getElementById("xlsx-upload");
 const dragDropArea = document.getElementById("drag-drop-area");
 const excelPreview = document.getElementById("excel-preview");
+const previewContainer = document.getElementById("preview-container");
 const exportButton = document.getElementById("export-image-btn");
+const fullscreenButton = document.getElementById("fullscreen-btn");
 const themeButtons = document.querySelectorAll(".theme-btn");
+const hamburger = document.getElementById("hamburger");
+const navLinks = document.getElementById("nav-links");
+const themeToggle = document.getElementById("theme-toggle");
 
 let currentProcessedData = null;
 
-// --- Event Listeners ---
+// =========================================================================
+// --- INITIALIZATION & EVENT LISTENERS ---
+// =========================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'default';
+    setTheme(savedTheme);
+});
+
+// Drag & Drop
 dragDropArea.addEventListener("click", () => uploadInput.click());
 uploadInput.addEventListener("change", (e) => handleFileSelect(e.target.files[0]));
 dragDropArea.addEventListener("dragover", (e) => {
     e.preventDefault();
-    dragDropArea.style.backgroundColor = "var(--secondary-color)";
+    dragDropArea.style.borderColor = "var(--primary)";
+    dragDropArea.style.backgroundColor = "rgba(var(--primary), 0.1)";
 });
 dragDropArea.addEventListener("dragleave", () => {
+    dragDropArea.style.borderColor = "";
     dragDropArea.style.backgroundColor = "";
 });
 dragDropArea.addEventListener("drop", (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    handleFileSelect(file);
+    dragDropArea.style.borderColor = "";
     dragDropArea.style.backgroundColor = "";
+    handleFileSelect(e.dataTransfer.files[0]);
 });
 
+// Theme Switching
 themeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const theme = button.dataset.theme;
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        themeButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-    });
+    button.addEventListener('click', () => setTheme(button.dataset.theme));
 });
 
-// Apply saved theme on load
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'default';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    const activeButton = document.querySelector(`.theme-btn[data-theme="${savedTheme}"]`);
-    if(activeButton) {
-        activeButton.classList.add('active');
+// Mobile Menu
+hamburger.addEventListener('click', () => {
+    navLinks.classList.toggle('active');
+});
+
+// Full Screen Toggle
+if(fullscreenButton) {
+    fullscreenButton.addEventListener('click', toggleFullScreen);
+}
+
+// Export
+if(exportButton) {
+    exportButton.addEventListener("click", exportScheduleToImage);
+}
+
+// Theme Toggle Button (Navbar)
+themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const newTheme = current === 'dark' ? 'default' : 'dark';
+    setTheme(newTheme);
+});
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    // Update active state on color swatches
+    themeButtons.forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.theme-btn[data-theme="${theme}"]`);
+    if(activeBtn) activeBtn.classList.add('active');
+}
+
+function toggleFullScreen() {
+    previewContainer.classList.toggle('fullscreen-mode');
+    const icon = fullscreenButton.querySelector('i');
+    const text = fullscreenButton.querySelector('.btn-text');
+
+    if (previewContainer.classList.contains('fullscreen-mode')) {
+        icon.classList.remove('fa-expand');
+        icon.classList.add('fa-compress');
+        text.textContent = "Exit Full Screen";
+        document.body.style.overflow = "hidden"; // Prevent background scrolling
+    } else {
+        icon.classList.remove('fa-compress');
+        icon.classList.add('fa-expand');
+        text.textContent = "Full Screen";
+        document.body.style.overflow = "";
     }
-});
-
+}
 
 // =========================================================================
 // --- CORE FILE HANDLING ---
 // =========================================================================
+
 async function handleFileSelect(file) {
-    if (!file) {
-        showError("No file was selected.");
-        return;
-    }
+    if (!file) return;
+
     if (file.size === 0) {
-        showError("The selected file is empty (0 bytes). Please select a valid PDF.");
+        showError("The selected file is empty.");
         return;
     }
     if (!file.name.toLowerCase().endsWith(".pdf")) {
@@ -65,9 +116,15 @@ async function handleFileSelect(file) {
         return;
     }
 
+    // Reset UI
     currentProcessedData = null;
-    excelPreview.innerHTML = "<p>Uploading and processing PDF...</p>";
+    excelPreview.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing your schedule...</p>
+        </div>`;
     if (exportButton) exportButton.disabled = true;
+    if (fullscreenButton) fullscreenButton.disabled = true;
 
     const formData = new FormData();
     formData.append('pdf_file', file);
@@ -79,33 +136,48 @@ async function handleFileSelect(file) {
         });
 
         const data = await response.json();
-        console.log(data);
 
         if (!response.ok) {
-            throw new Error(data.error || `Server responded with status ${response.status}`);
+            throw new Error(data.error || `Server Status: ${response.status}`);
         }
 
         const transformedData = transformBackendDataToDaysMap(data);
         currentProcessedData = transformedData;
-        const webHtml = generateWebDisplayHTML(currentProcessedData.daysMapData);
-        displayHTMLContent(webHtml);
+
+        // Check if we actually have data
         const hasData = Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
-        if (exportButton) exportButton.disabled = !hasData;
+
         if (!hasData) {
-            excelPreview.innerHTML = `<p>No schedule data could be extracted from the file.</p>`;
+            showError("No schedule data could be extracted.");
+            return;
         }
 
+        // Render HTML for Web View
+        renderScheduleWeb(currentProcessedData.daysMapData);
+
+        // Enable buttons
+        if (exportButton) exportButton.disabled = false;
+        if (fullscreenButton) fullscreenButton.disabled = false;
+
     } catch (error) {
-        console.error("Error communicating with backend:", error);
+        console.error("Backend Error:", error);
         showError(error.message);
     }
 }
 
 function showError(message) {
-    excelPreview.innerHTML = `<p style="color:red; font-weight:bold;">Error: ${message}</p>`;
+    excelPreview.innerHTML = `
+        <div class="empty-state" style="color: var(--primary);">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error: ${message}</p>
+        </div>`;
     if (exportButton) exportButton.disabled = true;
-    currentProcessedData = null;
+    if (fullscreenButton) fullscreenButton.disabled = true;
 }
+
+// =========================================================================
+// --- DATA TRANSFORMATION ---
+// =========================================================================
 
 function transformBackendDataToDaysMap(backendData) {
     const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
@@ -114,11 +186,9 @@ function transformBackendDataToDaysMap(backendData) {
         return { daysMapData: daysMap, sectionName: "" };
     }
 
-    // This regex reliably finds day abbreviations at the very end of a string.
     const dayRegex = /([MTWFHSaTh]+)$/i;
 
     for (const subjectData of backendData.subjects) {
-        // Clean the subject name. This replaces multiple spaces with a single one.
         const cleanedSubject = subjectData.subject.replace(/\s+/g, ' ').trim();
 
         for (const schedule of subjectData.schedules) {
@@ -126,25 +196,17 @@ function transformBackendDataToDaysMap(backendData) {
             const match = originalTimeString.match(dayRegex);
 
             if (match) {
-                // 1. Isolate the day string (e.g., "M", "Th", "W") and uppercase it.
                 const daysString = match[1].toUpperCase();
-
-                // 2. Isolate the raw time part by taking everything before the day string.
                 const timePartRaw = originalTimeString.substring(0, match.index);
-
-                // 3. Clean the time part by removing ALL spaces.
                 const cleanedTimePart = timePartRaw.replace(/\s/g, '');
-
-                // 4. Clean the room name by REMOVING ALL spaces as requested.
                 const cleanedRoom = schedule.room.replace(/\s/g, '');
 
                 const scheduleEntry = {
                     subject: cleanedSubject,
                     time: cleanedTimePart,
-                    room: cleanedRoom, // Use the space-free room name
+                    room: cleanedRoom,
                 };
 
-                // 5. Distribute the schedule entry into the correct day's array.
                 let i = 0;
                 while (i < daysString.length) {
                     if (daysString.substring(i, i + 2) === "TH") {
@@ -160,16 +222,16 @@ function transformBackendDataToDaysMap(backendData) {
                         i += 1;
                     }
                 }
-            } else {
-                // If a schedule time doesn't end with a day, log it as a warning.
-                console.warn(`Could not parse day from schedule time: "${originalTimeString}"`);
             }
         }
     }
-    // Clean the section name as well for consistent formatting.
     const sectionName = backendData.sectionName ? backendData.sectionName.replace(/\s+/g, ' ').trim() : "";
     return { daysMapData: daysMap, sectionName: sectionName };
 }
+
+// =========================================================================
+// --- WEB RENDERING ---
+// =========================================================================
 
 function convertTo24HourTime(timeString) {
     if (!timeString || typeof timeString !== "string") return 0;
@@ -191,29 +253,61 @@ const sortByTime = (a, b) => {
         if (match && match[1]) return match[1].trim();
         const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/);
         if (firstPartMatch && firstPartMatch[1]) {
-            const numericStart = firstPartMatch[1];
-            const periodMatch = fullTimeStr.match(/(am|pm)\s*$/i);
-            if (periodMatch && periodMatch[1]) return `${numericStart} ${periodMatch[1]}`;
-            return numericStart;
+            return firstPartMatch[1];
         }
         return fullTimeStr.split("-")[0].trim();
     }
     return convertTo24HourTime(extractActualStartTime(a.time)) - convertTo24HourTime(extractActualStartTime(b.time));
 };
 
-function generateWebDisplayHTML(daysMap) {
-    let htmlContent = "<div id='preview-wrapper' style='padding: 10px; background-color: var(--card-background); border: var(--card-border); margin-top:10px; border-radius: 8px;'><h2 style='text-align: center; font-family: sans-serif; margin-bottom: 15px; color: var(--text-color);'>Weekly Schedule (Preview)</h2><table style='width: 100%; margin: 0 auto; border-collapse: collapse; font-family: sans-serif; font-size: 13px;'><thead style='background-color: var(--secondary-color);'><tr><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Day</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Subject & Time</th><th style='padding: 10px; text-align: left; border-bottom: 2px solid var(--card-border);'>Room</th></tr></thead><tbody>";
+function renderScheduleWeb(daysMap) {
     const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    for (const day of daysOrder) {
-        const daySchedule = daysMap[day]?.sort(sortByTime) || [];
-        const daySubjects = daySchedule.map((item) => `${item.subject} (${item.time})`).join("<br>");
-        const dayRooms = daySchedule.map((item) => item.room).join("<br>");
-        htmlContent += `<tr><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); font-weight: bold; color: var(--text-color);'>${day}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); color: var(--text-color);'>${daySubjects||" "}</td><td style='padding: 8px; vertical-align: top; border-bottom: 1px solid var(--card-border); color: var(--text-color);'>${dayRooms||" "}</td></tr>`;
-    }
-    return htmlContent + "</tbody></table></div>";
+    const container = document.createElement('div');
+    container.className = 'schedule-grid-container';
+
+    daysOrder.forEach(day => {
+        const dayColumn = document.createElement('div');
+        dayColumn.className = 'day-column';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.textContent = day;
+        dayColumn.appendChild(header);
+
+        // Content
+        const schedule = daysMap[day]?.sort(sortByTime) || [];
+
+        if (schedule.length === 0) {
+            const emptyCard = document.createElement('div');
+            emptyCard.className = 'class-card';
+            emptyCard.style.opacity = '0.5';
+            emptyCard.innerHTML = '<span class="subject-name" style="font-weight:400">No classes</span>';
+            dayColumn.appendChild(emptyCard);
+        } else {
+            schedule.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'class-card';
+                card.innerHTML = `
+                    <span class="subject-name">${item.subject}</span>
+                    <div class="class-details">
+                        <span><i class="far fa-clock"></i> ${item.time}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> ${item.room}</span>
+                    </div>
+                `;
+                dayColumn.appendChild(card);
+            });
+        }
+        container.appendChild(dayColumn);
+    });
+
+    excelPreview.innerHTML = '';
+    excelPreview.appendChild(container);
 }
 
-function displayHTMLContent(htmlContent) { excelPreview.innerHTML = htmlContent; }
+// =========================================================================
+// --- CANVAS EXPORT LOGIC ---
+// =========================================================================
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath(); ctx.moveTo(x + radius, y);
@@ -244,27 +338,10 @@ function measureCardContentHeight(ctx, schedule, contentWidth, layout, fonts, fo
 }
 
 function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, palette, fontFamily) {
-    ctx.shadowColor = palette.shadow;
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 5;
-
+    ctx.shadowColor = palette.shadow; ctx.shadowBlur = 20; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 5;
     ctx.fillStyle = palette.cardBg;
     drawRoundedRect(ctx, x, y, width, height, layout.cardRadius);
-
-    ctx.shadowColor = 'transparent'; // Reset shadow for other elements
-
-    if (palette.cardBorder) {
-        ctx.strokeStyle = palette.cardBorder;
-        ctx.lineWidth = 1;
-        // Redraw rounded rect for stroke
-        ctx.beginPath(); ctx.moveTo(x + layout.cardRadius, y);
-        ctx.lineTo(x + width - layout.cardRadius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + layout.cardRadius);
-        ctx.lineTo(x + width, y + height - layout.cardRadius); ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + layout.cardRadius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - layout.cardRadius);
-        ctx.lineTo(x, y + layout.cardRadius); ctx.quadraticCurveTo(x, y, x + layout.cardRadius, y);
-        ctx.closePath(); ctx.stroke();
-    }
+    ctx.shadowColor = 'transparent';
 
     ctx.textAlign = 'left';
     const contentX = x + layout.cardPadding; const contentWidth = width - layout.cardPadding * 2;
@@ -304,21 +381,18 @@ async function drawScheduleOnCanvas(ctx, options) {
     const gridConfig = { cols: isPortrait ? 2 : 3, rows: isPortrait ? 3 : 2 };
 
     const themes = {
-        default: { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#3A506B', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' },
-        dark: { bg: '#121212', cardBg: '#1E1E1E', shadow: 'rgba(0, 0, 0, 0.5)', title: '#E0E0E0', dayTitle: '#1E90FF', subject: '#E0E0E0', details: '#B0B0B0', separator: '#2A2A2A' },
+        default: { bg: '#F4F7FC', cardBg: '#FFFFFF', shadow: 'rgba(100, 100, 150, 0.1)', title: '#1A253C', dayTitle: '#2563eb', subject: '#2C3E50', details: '#5A6B7B', separator: '#EAEFF7' },
+        dark: { bg: '#121212', cardBg: '#1E1E1E', shadow: 'rgba(0, 0, 0, 0.5)', title: '#E0E0E0', dayTitle: '#38bdf8', subject: '#E0E0E0', details: '#B0B0B0', separator: '#2A2A2A' },
         maroon: { bg: '#FDF5E6', cardBg: '#FFFFFF', shadow: 'rgba(128, 0, 0, 0.1)', title: '#800000', dayTitle: '#A52A2A', subject: '#4B3832', details: '#6F4E37', separator: '#EAE0D3' },
-        wisteria: { bg: '#F5F3F7', cardBg: '#FFFFFF', shadow: 'rgba(155, 137, 179, 0.15)', title: '#9B89B3', dayTitle: '#8A799D', subject: '#3D3C42', details: '#5A5863', separator: '#E6E0F0' },
-        'soft-pink': { bg: '#fff0f5', cardBg: '#FFFFFF', shadow: 'rgba(255, 105, 180, 0.1)', title: '#ff69b4', dayTitle: '#333', subject: '#333', details: '#555', separator: '#ffc0cb' },
-        autumn: { bg: '#fdf6e8', cardBg: '#FEFBF6', shadow: 'rgba(136, 103, 54, 0.15)', title: '#D88C22', dayTitle: '#886736', subject: '#4D4030', details: '#6B5B47', separator: '#F7E7D4' },
-        winter: { bg: '#F0F4F8', cardBg: '#FFFFFF', shadow: 'rgba(74, 144, 226, 0.1)', title: '#4A90E2', dayTitle: '#2F3B4B', subject: '#2F3B4B', details: '#5A6B7B', separator: '#EBF2FA' },
-        summer: { bg: '#FFFBEA', cardBg: '#FFFFFF', shadow: 'rgba(255, 199, 0, 0.2)', title: '#F57C00', dayTitle: '#D4A000', subject: '#5D4037', details: '#795548', separator: '#FFF8E1' },
-        sakura: { bg: '#FEF9FA', cardBg: '#FFFFFF', shadow: 'rgba(255, 183, 197, 0.2)', title: '#E895A5', dayTitle: '#D991A0', subject: '#5C474B', details: '#756367', separator: '#FFF5F7' }
+        wisteria: { bg: '#F5F3F7', cardBg: '#FFFFFF', shadow: 'rgba(155, 137, 179, 0.15)', title: '#9B89B3', dayTitle: '#9333ea', subject: '#3D3C42', details: '#5A5863', separator: '#E6E0F0' },
+        summer: { bg: '#FFFBEA', cardBg: '#FFFFFF', shadow: 'rgba(255, 199, 0, 0.2)', title: '#F57C00', dayTitle: '#d97706', subject: '#5D4037', details: '#795548', separator: '#FFF8E1' },
+        sakura: { bg: '#FEF9FA', cardBg: '#FFFFFF', shadow: 'rgba(255, 183, 197, 0.2)', title: '#E895A5', dayTitle: '#db2777', subject: '#5C474B', details: '#756367', separator: '#FFF5F7' }
     };
 
     const palette = themes[theme] || themes.default;
     const fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
 
-    // --- Draw Thematic Backgrounds ---
+    // Background
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
@@ -330,26 +404,17 @@ async function drawScheduleOnCanvas(ctx, options) {
     };
 
     let backgroundPromise = Promise.resolve();
-
     if (imageThemes[theme]) {
         backgroundPromise = new Promise((resolve) => {
             const bgImage = new Image();
             bgImage.src = imageThemes[theme];
-            bgImage.onload = () => {
-                ctx.drawImage(bgImage, 0, 0, width, height);
-                resolve();
-            };
-            bgImage.onerror = () => {
-                console.error(`Failed to load ${imageThemes[theme]}. Using fallback color.`);
-                ctx.fillStyle = palette.bg;
-                ctx.fillRect(0, 0, width, height);
-                resolve();
-            };
+            bgImage.onload = () => { ctx.drawImage(bgImage, 0, 0, width, height); resolve(); };
+            bgImage.onerror = () => { resolve(); };
         });
     }
-
     await backgroundPromise;
 
+    // Layout Calculations
     const idealBaseFontSize = isPortrait ? width / 35 : 28;
     const idealLayout = {
         padding: isPortrait ? width * 0.08 : 70, gap: isPortrait ? width * 0.05 : 35,
@@ -366,6 +431,7 @@ async function drawScheduleOnCanvas(ctx, options) {
     const idealCardWidth = (width - idealLayout.padding * 2 - idealLayout.gap * (gridConfig.cols - 1)) / gridConfig.cols;
     const contentWidth = idealCardWidth - idealLayout.cardPadding * 2;
     let idealRowHeights = [];
+
     for (let r = 0; r < gridConfig.rows; r++) {
         let maxRowHeight = 0;
         for (let c = 0; c < gridConfig.cols; c++) {
@@ -378,13 +444,14 @@ async function drawScheduleOnCanvas(ctx, options) {
         }
         idealRowHeights.push(idealLayout.cardPadding * 2 + maxRowHeight);
     }
+
     const totalIdealGridHeight = idealRowHeights.reduce((a, b) => a + b, 0) + (idealLayout.gap * (gridConfig.rows - 1));
-    const titleAreaHeight = idealLayout.padding + idealFonts.title.size + idealFonts.title.size * 1.5;
+    const titleAreaHeight = idealLayout.padding + idealFonts.title.size * 2.5;
     const availableHeight = height - titleAreaHeight - idealLayout.padding;
     const scale = Math.min(1.0, availableHeight / totalIdealGridHeight);
 
     const finalLayout = Object.fromEntries(Object.entries(idealLayout).map(([k, v]) => [k, v * scale]));
-    finalLayout.padding = idealLayout.padding;
+    finalLayout.padding = idealLayout.padding; // Keep padding standard
     const finalFonts = {
         base: idealFonts.base * scale,
         title: { size: idealFonts.title.size * scale, weight: 700 },
@@ -393,19 +460,18 @@ async function drawScheduleOnCanvas(ctx, options) {
         details: { size: idealFonts.details.size * scale, weight: 400 },
     };
 
-    // --- Draw Title ---
+    // Draw Title
     ctx.fillStyle = palette.title;
     ctx.font = `${finalFonts.title.weight} ${finalFonts.title.size}px ${fontFamily}`;
     ctx.textAlign = 'center';
     const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
     const titleY = finalLayout.padding + finalFonts.title.size;
-    ctx.shadowColor = 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = 5;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
+
+    ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
     ctx.fillText(mainTitle, width / 2, titleY);
     ctx.shadowColor = 'transparent';
 
+    // Draw Grid
     let currentY = titleY + finalFonts.title.size * 1.5;
     const finalCardWidth = idealCardWidth * scale;
     const totalGridWidth = (finalCardWidth * gridConfig.cols) + (finalLayout.gap * (gridConfig.cols - 1));
@@ -425,45 +491,42 @@ async function drawScheduleOnCanvas(ctx, options) {
         currentY += rowHeight + finalLayout.gap;
     }
 
-    // --- ADD WATERMARK ---
+    // Watermark
     ctx.save();
-    const watermarkSize = finalFonts.details.size * 1.2;
+    const watermarkSize = finalFonts.details.size * 1.1;
     ctx.font = `italic ${watermarkSize}px ${fontFamily}`;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillStyle = "rgba(100, 100, 100, 0.4)";
+    if(theme === 'dark') ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
     ctx.textAlign = 'right';
     ctx.textBaseline = 'bottom';
-    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-    ctx.shadowBlur = 3;
-    ctx.fillText("James Ryan", width - finalLayout.padding, height - finalLayout.padding);
+    ctx.fillText("James Ryan | SIAS Organizer", width - finalLayout.padding, height - finalLayout.padding/2);
     ctx.restore();
 }
 
 async function exportScheduleToImage() {
     if (!currentProcessedData || !currentProcessedData.daysMapData) {
-        alert("No schedule data to export. Please upload a file first.");
+        alert("No schedule data to export.");
         return;
     }
     const currentSectionName = currentProcessedData.sectionName || "";
     const selectedTheme = localStorage.getItem('theme') || 'default';
 
-    const dpr = window.devicePixelRatio || 1;
-
+    // High Res Calculation
+    const dpr = window.devicePixelRatio || 2;
     const targetImageWidth = screen.width * dpr;
     const targetImageHeight = screen.height * dpr;
     const isPortraitView = targetImageHeight > targetImageWidth;
-    const filenameSuffix = `${targetImageWidth}x${targetImageHeight}_wallpaper`;
 
     const canvas = document.createElement('canvas');
     canvas.width = targetImageWidth;
     canvas.height = targetImageHeight;
     const ctx = canvas.getContext('2d');
 
-    try {
-        if (exportButton) {
-            exportButton.textContent = "Generating Wallpaper...";
-            exportButton.disabled = true;
-        }
+    const originalText = exportButton.querySelector('.btn-text').textContent;
+    exportButton.querySelector('.btn-text').textContent = "Generating...";
+    exportButton.disabled = true;
 
+    try {
         await drawScheduleOnCanvas(ctx, {
             width: targetImageWidth,
             height: targetImageHeight,
@@ -474,30 +537,20 @@ async function exportScheduleToImage() {
         });
 
         const imageDataURL = canvas.toDataURL("image/png");
-        let downloadFilename = `schedule_${selectedTheme}_${filenameSuffix}.png`;
-        if (currentSectionName) {
-            const sanitizedSectionName = currentSectionName.replace(/[^a-z0-9_\-]/gi, "_").replace(/_{2,}/g, "_");
-            downloadFilename = `schedule_${sanitizedSectionName}_${selectedTheme}_${filenameSuffix}.png`;
-        }
+        const sanitizedSectionName = currentSectionName.replace(/[^a-z0-9]/gi, "_") || "MySchedule";
+
         const downloadLink = document.createElement("a");
         downloadLink.href = imageDataURL;
-        downloadLink.download = downloadFilename;
+        downloadLink.download = `SIAS_${sanitizedSectionName}_${selectedTheme}.png`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
 
     } catch (error) {
-        console.error("Error exporting to image:", error);
-        alert("Failed to export image. See console for details.");
+        console.error("Export Error:", error);
+        alert("Failed to create image.");
     } finally {
-        if (exportButton) {
-            exportButton.textContent = "Export as Wallpaper";
-            const hasData = currentProcessedData?.daysMapData && Object.values(currentProcessedData.daysMapData).some(arr => arr.length > 0);
-            exportButton.disabled = !hasData;
-        }
+        exportButton.querySelector('.btn-text').textContent = originalText;
+        exportButton.disabled = false;
     }
-}
-
-if (exportButton) {
-    exportButton.addEventListener("click", exportScheduleToImage);
 }
