@@ -51,6 +51,13 @@ let customBgImage = null;
 let currentViewMode = 'web'; // 'web', 'mobile', 'desktop'
 let previewZoom = 1.0;
 
+// Pan State
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let panX = 0;
+let panY = 0;
+
 // State for Customization
 let customFont = 'modern';
 let customTitle = '';
@@ -355,11 +362,11 @@ function switchView(mode) {
     }
 }
 
-// Zoom Logic
+// Zoom and Pan Logic
 function updateZoom() {
     const canvas = canvasPreviewWrapper.querySelector('canvas');
     if (canvas) {
-        canvas.style.transform = `scale(${previewZoom})`;
+        canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${previewZoom})`;
         canvas.style.transformOrigin = 'center center'; // Center scaling
         zoomLevelSpan.textContent = `${Math.round(previewZoom * 100)}%`;
     }
@@ -381,9 +388,12 @@ zoomOutBtn.addEventListener('click', () => {
 
 zoomResetBtn.addEventListener('click', () => {
     previewZoom = 1.0;
+    panX = 0;
+    panY = 0;
     updateZoom();
 });
 
+// Mouse Wheel Zoom
 canvasPreviewWrapper.addEventListener('wheel', (e) => {
     if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
@@ -393,6 +403,43 @@ canvasPreviewWrapper.addEventListener('wheel', (e) => {
         updateZoom();
     }
 });
+
+// Panning Logic
+function startPan(e) {
+    if (currentViewMode === 'web') return; // Disable pan in grid view (though wrapper hidden anyway)
+    isPanning = true;
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    panStartX = clientX - panX;
+    panStartY = clientY - panY;
+    canvasPreviewWrapper.style.cursor = 'grabbing';
+}
+
+function doPan(e) {
+    if (!isPanning) return;
+    e.preventDefault(); // Prevent scroll on touch
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    panX = clientX - panStartX;
+    panY = clientY - panStartY;
+    updateZoom();
+}
+
+function endPan() {
+    isPanning = false;
+    canvasPreviewWrapper.style.cursor = 'grab';
+}
+
+// Mouse Events
+canvasPreviewWrapper.addEventListener('mousedown', startPan);
+canvasPreviewWrapper.addEventListener('mousemove', doPan);
+canvasPreviewWrapper.addEventListener('mouseup', endPan);
+canvasPreviewWrapper.addEventListener('mouseleave', endPan);
+
+// Touch Events
+canvasPreviewWrapper.addEventListener('touchstart', startPan);
+canvasPreviewWrapper.addEventListener('touchmove', doPan);
+canvasPreviewWrapper.addEventListener('touchend', endPan);
 
 // Custom Background Handling
 bgUploadInput.addEventListener("change", (e) => {
