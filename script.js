@@ -2,7 +2,7 @@
 
 const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
-// --- DOM Elements ---
+// DOM Element References
 const uploadInput = document.getElementById("xlsx-upload");
 const dragDropArea = document.getElementById("drag-drop-area");
 const excelPreview = document.getElementById("excel-preview");
@@ -13,20 +13,275 @@ const themeButtons = document.querySelectorAll(".theme-btn");
 const hamburger = document.getElementById("hamburger");
 const navLinks = document.getElementById("nav-links");
 const themeToggle = document.getElementById("theme-toggle");
+const bgUploadInput = document.getElementById("bg-upload");
+const bgFilenameSpan = document.getElementById("bg-filename");
+const clearBgBtn = document.getElementById("clear-bg-btn");
+
+const viewWebBtn = document.getElementById("view-web");
+const viewMobileBtn = document.getElementById("view-mobile");
+const viewDesktopBtn = document.getElementById("view-desktop");
+const canvasPreviewWrapper = document.getElementById("canvas-preview-wrapper");
+
+// Customization Elements
+const toggleCustomization = document.getElementById("toggle-customization");
+const customizationControls = document.getElementById("customization-controls");
+const fontSelect = document.getElementById("font-select");
+const customTitleInput = document.getElementById("custom-title");
+const bgXSlider = document.getElementById("bg-x");
+const bgYSlider = document.getElementById("bg-y");
+const bgScaleSlider = document.getElementById("bg-scale");
+const bgOpacitySlider = document.getElementById("bg-opacity");
+const cardDaySelect = document.getElementById("card-day-select");
+const cardWidthSlider = document.getElementById("card-width");
+const cardHeightSlider = document.getElementById("card-height");
+const cardXSlider = document.getElementById("card-x");
+const cardYSlider = document.getElementById("card-y");
+const cardOpacitySlider = document.getElementById("card-opacity");
+const undoBtn = document.getElementById("undo-btn");
+const redoBtn = document.getElementById("redo-btn");
+
+const zoomControls = document.getElementById("zoom-controls");
+const zoomInBtn = document.getElementById("zoom-in");
+const zoomOutBtn = document.getElementById("zoom-out");
+const zoomResetBtn = document.getElementById("zoom-reset");
+const zoomLevelSpan = document.getElementById("zoom-level");
 
 let currentProcessedData = null;
+let customBgImage = null;
+let currentViewMode = 'web'; // 'web', 'mobile', 'desktop'
+let previewZoom = 1.0;
 
-// =========================================================================
-// --- INITIALIZATION & EVENT LISTENERS ---
-// =========================================================================
+// State for Customization
+let customFont = 'modern';
+let customTitle = '';
+let bgConfig = { x: 0, y: 0, scale: 100, opacity: 100 };
+let cardOpacity = 100;
+let cardDimensions = {
+    Monday: { w: 100, h: 100, x: 0, y: 0 },
+    Tuesday: { w: 100, h: 100, x: 0, y: 0 },
+    Wednesday: { w: 100, h: 100, x: 0, y: 0 },
+    Thursday: { w: 100, h: 100, x: 0, y: 0 },
+    Friday: { w: 100, h: 100, x: 0, y: 0 },
+    Saturday: { w: 100, h: 100, x: 0, y: 0 }
+};
+
+// History Stacks
+let historyStack = [];
+let redoStack = [];
+const MAX_HISTORY = 50;
+
+function saveState() {
+    const state = {
+        customFont,
+        customTitle,
+        bgConfig: { ...bgConfig },
+        cardOpacity,
+        cardDimensions: JSON.parse(JSON.stringify(cardDimensions))
+    };
+    
+    // Don't push identical state
+    if (historyStack.length > 0) {
+        const lastState = historyStack[historyStack.length - 1];
+        if (JSON.stringify(lastState) === JSON.stringify(state)) return;
+    }
+
+    historyStack.push(state);
+    if (historyStack.length > MAX_HISTORY) historyStack.shift();
+    redoStack = []; // Clear redo stack on new action
+    updateHistoryButtons();
+}
+
+function restoreState(state) {
+    customFont = state.customFont;
+    customTitle = state.customTitle;
+    bgConfig = { ...state.bgConfig };
+    cardOpacity = state.cardOpacity;
+    cardDimensions = JSON.parse(JSON.stringify(state.cardDimensions));
+    
+    applyStateToUI();
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+}
+
+function undo() {
+    if (historyStack.length === 0) return;
+    
+    // Save current state to redo stack first
+    const currentState = {
+        customFont,
+        customTitle,
+        bgConfig: { ...bgConfig },
+        cardOpacity,
+        cardDimensions: JSON.parse(JSON.stringify(cardDimensions))
+    };
+    redoStack.push(currentState);
+    
+    const previousState = historyStack.pop();
+    restoreState(previousState);
+    updateHistoryButtons();
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    
+    const nextState = redoStack.pop();
+    // Save current to history before applying next
+    const currentState = {
+        customFont,
+        customTitle,
+        bgConfig: { ...bgConfig },
+        cardOpacity,
+        cardDimensions: JSON.parse(JSON.stringify(cardDimensions))
+    };
+    historyStack.push(currentState);
+    
+    restoreState(nextState);
+    updateHistoryButtons();
+}
+
+function updateHistoryButtons() {
+    undoBtn.disabled = historyStack.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+}
+
+function applyStateToUI() {
+    fontSelect.value = customFont;
+    customTitleInput.value = customTitle;
+    bgXSlider.value = bgConfig.x;
+    bgYSlider.value = bgConfig.y;
+    bgScaleSlider.value = bgConfig.scale;
+    bgOpacitySlider.value = bgConfig.opacity;
+    cardOpacitySlider.value = cardOpacity;
+    
+    // Update card sliders based on currently selected day
+    const day = cardDaySelect.value;
+    if (day === 'all') {
+        // Use Monday as reference
+        cardWidthSlider.value = cardDimensions.Monday.w;
+        cardHeightSlider.value = cardDimensions.Monday.h;
+        cardXSlider.value = cardDimensions.Monday.x;
+        cardYSlider.value = cardDimensions.Monday.y;
+    } else {
+        cardWidthSlider.value = cardDimensions[day].w;
+        cardHeightSlider.value = cardDimensions[day].h;
+        cardXSlider.value = cardDimensions[day].x;
+        cardYSlider.value = cardDimensions[day].y;
+    }
+}
+
+// Attach Undo/Redo Listeners
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+
+// Initialization and Event Listeners
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Load saved theme
+    // Load saved theme from local storage
     const savedTheme = localStorage.getItem('theme') || 'default';
     setTheme(savedTheme);
 });
 
-// Drag & Drop
+// Toggle Customization Panel
+if (toggleCustomization) {
+    toggleCustomization.addEventListener('click', () => {
+        // Check if mobile
+        if (window.innerWidth <= 768) {
+            const column = document.querySelector('.customization-column');
+            column.classList.toggle('expanded');
+            
+            // Adjust chevron
+            const isExpanded = column.classList.contains('expanded');
+            toggleCustomization.querySelector('.fa-chevron-down').style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        } else {
+            // Desktop behavior
+            const isHidden = customizationControls.style.display === 'none';
+            customizationControls.style.display = isHidden ? 'grid' : 'none';
+            toggleCustomization.querySelector('.fa-chevron-down').style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    });
+}
+
+// General Settings Change
+// Use 'change' for history saving to avoid flood during typing, 'input' for live preview
+customTitleInput.addEventListener('focus', saveState); // Save state before edit starts
+customTitleInput.addEventListener('input', (e) => {
+    customTitle = e.target.value;
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+});
+
+// Font Change
+fontSelect.addEventListener('focus', saveState);
+fontSelect.addEventListener('change', (e) => {
+    customFont = e.target.value;
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+});
+
+// Background Position/Scale/Opacity Change
+function updateBgConfig() {
+    bgConfig.x = parseInt(bgXSlider.value);
+    bgConfig.y = parseInt(bgYSlider.value);
+    bgConfig.scale = parseInt(bgScaleSlider.value);
+    bgConfig.opacity = parseInt(bgOpacitySlider.value);
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+}
+// Save state on pointerdown (start of slide)
+[bgXSlider, bgYSlider, bgScaleSlider, bgOpacitySlider].forEach(el => {
+    el.addEventListener('pointerdown', saveState);
+    el.addEventListener('input', updateBgConfig);
+});
+
+// Card Opacity
+cardOpacitySlider.addEventListener('pointerdown', saveState);
+cardOpacitySlider.addEventListener('input', (e) => {
+    cardOpacity = parseInt(e.target.value);
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+});
+
+// Card Dimension Change
+cardDaySelect.addEventListener('change', () => {
+    const day = cardDaySelect.value;
+    // Update sliders to reflect current selection
+    if (day === 'all') {
+        // Just take Monday as representative or reset to 100? Let's take Monday.
+        cardWidthSlider.value = cardDimensions.Monday.w;
+        cardHeightSlider.value = cardDimensions.Monday.h;
+        cardXSlider.value = cardDimensions.Monday.x;
+        cardYSlider.value = cardDimensions.Monday.y;
+    } else {
+        cardWidthSlider.value = cardDimensions[day].w;
+        cardHeightSlider.value = cardDimensions[day].h;
+        cardXSlider.value = cardDimensions[day].x;
+        cardYSlider.value = cardDimensions[day].y;
+    }
+});
+
+function updateCardDimensions() {
+    const day = cardDaySelect.value;
+    const w = parseInt(cardWidthSlider.value);
+    const h = parseInt(cardHeightSlider.value);
+    const x = parseInt(cardXSlider.value);
+    const y = parseInt(cardYSlider.value);
+    
+    if (day === 'all') {
+        Object.keys(cardDimensions).forEach(d => {
+            cardDimensions[d].w = w;
+            cardDimensions[d].h = h;
+            cardDimensions[d].x = x;
+            cardDimensions[d].y = y;
+        });
+    } else {
+        cardDimensions[day].w = w;
+        cardDimensions[day].h = h;
+        cardDimensions[day].x = x;
+        cardDimensions[day].y = y;
+    }
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+}
+[cardWidthSlider, cardHeightSlider, cardXSlider, cardYSlider].forEach(el => {
+    el.addEventListener('pointerdown', saveState);
+    el.addEventListener('input', updateCardDimensions);
+});
+
+// Drag and Drop File Handling
 dragDropArea.addEventListener("click", () => uploadInput.click());
 uploadInput.addEventListener("change", (e) => handleFileSelect(e.target.files[0]));
 dragDropArea.addEventListener("dragover", (e) => {
@@ -45,31 +300,125 @@ dragDropArea.addEventListener("drop", (e) => {
     handleFileSelect(e.dataTransfer.files[0]);
 });
 
-// Theme Switching
+// Theme Switching Handlers
 themeButtons.forEach(button => {
     button.addEventListener('click', () => setTheme(button.dataset.theme));
 });
 
-// Mobile Menu
+// Mobile Navigation Menu Toggle
 hamburger.addEventListener('click', () => {
     navLinks.classList.toggle('active');
 });
 
-// Full Screen Toggle
+// Full Screen Mode Toggle
 if(fullscreenButton) {
     fullscreenButton.addEventListener('click', toggleFullScreen);
 }
 
-// Export
+// Export Functionality
 if(exportButton) {
     exportButton.addEventListener("click", exportScheduleToImage);
 }
 
-// Theme Toggle Button (Navbar)
+// Navbar Theme Toggle Button
 themeToggle.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
     const newTheme = current === 'dark' ? 'default' : 'dark';
     setTheme(newTheme);
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+});
+
+// View Toggle Handlers
+viewWebBtn.addEventListener('click', () => switchView('web'));
+viewMobileBtn.addEventListener('click', () => switchView('mobile'));
+viewDesktopBtn.addEventListener('click', () => switchView('desktop'));
+
+function switchView(mode) {
+    currentViewMode = mode;
+    
+    // Update button states
+    [viewWebBtn, viewMobileBtn, viewDesktopBtn].forEach(btn => btn.classList.remove('active'));
+    if (mode === 'web') viewWebBtn.classList.add('active');
+    if (mode === 'mobile') viewMobileBtn.classList.add('active');
+    if (mode === 'desktop') viewDesktopBtn.classList.add('active');
+
+    // Update UI visibility
+    if (mode === 'web') {
+        excelPreview.style.display = "grid";
+        canvasPreviewWrapper.style.display = "none";
+        zoomControls.style.display = "none";
+    } else {
+        excelPreview.style.display = "none";
+        canvasPreviewWrapper.style.display = "flex";
+        zoomControls.style.display = "flex";
+        if (currentProcessedData) updatePreview();
+    }
+}
+
+// Zoom Logic
+function updateZoom() {
+    const canvas = canvasPreviewWrapper.querySelector('canvas');
+    if (canvas) {
+        canvas.style.transform = `scale(${previewZoom})`;
+        canvas.style.transformOrigin = 'center center'; // Center scaling
+        zoomLevelSpan.textContent = `${Math.round(previewZoom * 100)}%`;
+    }
+}
+
+zoomInBtn.addEventListener('click', () => {
+    if (previewZoom < 3.0) {
+        previewZoom += 0.1;
+        updateZoom();
+    }
+});
+
+zoomOutBtn.addEventListener('click', () => {
+    if (previewZoom > 0.5) {
+        previewZoom -= 0.1;
+        updateZoom();
+    }
+});
+
+zoomResetBtn.addEventListener('click', () => {
+    previewZoom = 1.0;
+    updateZoom();
+});
+
+canvasPreviewWrapper.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.min(Math.max(previewZoom + delta, 0.5), 3.0);
+        previewZoom = newZoom;
+        updateZoom();
+    }
+});
+
+// Custom Background Handling
+bgUploadInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            customBgImage = img;
+            bgFilenameSpan.textContent = file.name.length > 15 ? file.name.substring(0, 12) + "..." : file.name;
+            clearBgBtn.style.display = "inline-flex";
+            if (currentProcessedData && currentViewMode !== 'web') updatePreview();
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+clearBgBtn.addEventListener("click", () => {
+    customBgImage = null;
+    bgUploadInput.value = "";
+    bgFilenameSpan.textContent = "";
+    clearBgBtn.style.display = "none";
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
 });
 
 function setTheme(theme) {
@@ -80,6 +429,8 @@ function setTheme(theme) {
     themeButtons.forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.querySelector(`.theme-btn[data-theme="${theme}"]`);
     if(activeBtn) activeBtn.classList.add('active');
+    
+    if (currentProcessedData && currentViewMode !== 'web') updatePreview();
 }
 
 function toggleFullScreen() {
@@ -100,9 +451,7 @@ function toggleFullScreen() {
     }
 }
 
-// =========================================================================
-// --- CORE FILE HANDLING ---
-// =========================================================================
+// Core File Processing and API Interaction
 
 async function handleFileSelect(file) {
     if (!file) return;
@@ -116,7 +465,7 @@ async function handleFileSelect(file) {
         return;
     }
 
-    // Reset UI
+    // Reset UI state before processing
     currentProcessedData = null;
     excelPreview.innerHTML = `
         <div class="empty-state">
@@ -154,6 +503,9 @@ async function handleFileSelect(file) {
 
         // Render HTML for Web View
         renderScheduleWeb(currentProcessedData.daysMapData);
+        
+        // Update Preview if in Canvas mode
+        if (currentViewMode !== 'web') updatePreview();
 
         // Enable buttons
         if (exportButton) exportButton.disabled = false;
@@ -175,9 +527,7 @@ function showError(message) {
     if (fullscreenButton) fullscreenButton.disabled = true;
 }
 
-// =========================================================================
-// --- DATA TRANSFORMATION ---
-// =========================================================================
+// Data Transformation Logic
 
 function transformBackendDataToDaysMap(backendData) {
     const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
@@ -229,9 +579,7 @@ function transformBackendDataToDaysMap(backendData) {
     return { daysMapData: daysMap, sectionName: sectionName };
 }
 
-// =========================================================================
-// --- WEB RENDERING ---
-// =========================================================================
+// Web View Rendering
 
 function convertTo24HourTime(timeString) {
     if (!timeString || typeof timeString !== "string") return 0;
@@ -305,9 +653,25 @@ function renderScheduleWeb(daysMap) {
     excelPreview.appendChild(container);
 }
 
-// =========================================================================
-// --- CANVAS EXPORT LOGIC ---
-// =========================================================================
+// Canvas Rendering and Export Logic
+
+function drawDotPattern(ctx, width, height, color) {
+    const dotSize = width * 0.002;
+    const spacing = width * 0.03;
+    
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.1;
+
+    for (let x = 0; x < width; x += spacing) {
+        for (let y = 0; y < height; y += spacing) {
+            ctx.beginPath();
+            ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath(); ctx.moveTo(x + radius, y);
@@ -318,19 +682,41 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.closePath(); ctx.fill();
 }
 
+function getWrappedLines(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    let line = '';
+    let lines = [];
+    
+    for (const word of words) {
+        const testLine = line ? `${line} ${word}` : word;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = testLine;
+        }
+    }
+    if (line) lines.push(line);
+    return lines;
+}
+
 function measureCardContentHeight(ctx, schedule, contentWidth, layout, fonts, fontFamily) {
     let height = fonts.dayTitle.size + (fonts.dayTitle.size * 0.6) + (fonts.dayTitle.size * 1.2);
     if (schedule.length === 0) { height += fonts.details.size; }
     else {
         for (const item of schedule) {
             ctx.font = `${fonts.subject.weight} ${fonts.subject.size}px ${fontFamily}`;
-            const words = item.subject.split(' '); let line = ''; let lineCount = 0;
-            for (const word of words) {
-                const testLine = line ? `${line} ${word}` : word;
-                if (ctx.measureText(testLine).width > contentWidth && line) { lineCount++; line = word; } else { line = testLine; }
-            }
-            lineCount++; height += (lineCount * fonts.subject.size * 1.15);
-            height += (fonts.details.size * 1.1); height += layout.entryGap;
+            // Measure Subject Lines
+            const subjectLines = getWrappedLines(ctx, item.subject, contentWidth);
+            height += (subjectLines.length * fonts.subject.size * 1.15);
+            
+            // Measure Details Lines
+            ctx.font = `${fonts.details.weight} ${fonts.details.size}px ${fontFamily}`;
+            const detailsText = `${item.time}  •  ${item.room}`;
+            const detailsLines = getWrappedLines(ctx, detailsText, contentWidth);
+            height += (detailsLines.length * fonts.details.size * 1.15);
+            
+            height += layout.entryGap;
         }
         height -= layout.entryGap;
     }
@@ -339,8 +725,14 @@ function measureCardContentHeight(ctx, schedule, contentWidth, layout, fonts, fo
 
 function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, palette, fontFamily) {
     ctx.shadowColor = palette.shadow; ctx.shadowBlur = 20; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 5;
+    
+    // Apply Card Opacity
+    ctx.save();
+    ctx.globalAlpha = cardOpacity / 100;
     ctx.fillStyle = palette.cardBg;
     drawRoundedRect(ctx, x, y, width, height, layout.cardRadius);
+    ctx.restore();
+
     ctx.shadowColor = 'transparent';
 
     ctx.textAlign = 'left';
@@ -361,15 +753,14 @@ function drawCard(ctx, dayName, schedule, x, y, width, height, layout, fonts, pa
     } else {
         for (const item of schedule) {
             ctx.font = `${fonts.subject.weight} ${fonts.subject.size}px ${fontFamily}`; ctx.fillStyle = palette.subject;
-            const words = item.subject.split(' '); let line = ''; let subjectLines = [];
-            for (const word of words) {
-                const testLine = line ? `${line} ${word}` : word;
-                if (ctx.measureText(testLine).width > contentWidth && line) { subjectLines.push(line); line = word; } else { line = testLine; }
-            }
-            subjectLines.push(line);
+            const subjectLines = getWrappedLines(ctx, item.subject, contentWidth);
             for(const line of subjectLines) { ctx.fillText(line, contentX, currentY); currentY += fonts.subject.size * 1.15; }
+            
             ctx.fillStyle = palette.details; ctx.font = `${fonts.details.weight} ${fonts.details.size}px ${fontFamily}`;
-            ctx.fillText(`${item.time}  •  ${item.room}`, contentX, currentY);
+            const detailsText = `${item.time}  •  ${item.room}`;
+            const detailsLines = getWrappedLines(ctx, detailsText, contentWidth);
+            for(const line of detailsLines) { ctx.fillText(line, contentX, currentY); currentY += fonts.details.size * 1.15; }
+
             currentY += layout.entryGap;
         }
     }
@@ -390,29 +781,60 @@ async function drawScheduleOnCanvas(ctx, options) {
     };
 
     const palette = themes[theme] || themes.default;
-    const fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
+    
+    // Resolve Font Family
+    let fontFamily = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif'; // default
+    if (customFont === 'serif') fontFamily = '"Playfair Display", serif';
+    else if (customFont === 'hand') fontFamily = '"Caveat", cursive';
+    else if (customFont === 'mono') fontFamily = '"Fira Code", monospace';
+    else if (customFont === 'modern') fontFamily = '"Poppins", sans-serif';
+    else if (customFont === 'slab') fontFamily = '"Roboto Slab", serif';
+    else if (customFont === 'pacifico') fontFamily = '"Pacifico", cursive';
+    else if (customFont === 'oswald') fontFamily = '"Oswald", sans-serif';
+    else if (customFont === 'quicksand') fontFamily = '"Quicksand", sans-serif';
+
 
     // Background
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
-    const imageThemes = {
-        summer: 'img/summer.jpg',
-        autumn: 'img/autumn.jpg',
-        winter: 'img/winter.jpg',
-        sakura: 'img/sakura.jpg'
-    };
+    if (customBgImage) {
+        // Draw custom background with customization
+        const imgRatio = customBgImage.width / customBgImage.height;
+        const canvasRatio = width / height;
+        let baseW, baseH;
 
-    let backgroundPromise = Promise.resolve();
-    if (imageThemes[theme]) {
-        backgroundPromise = new Promise((resolve) => {
-            const bgImage = new Image();
-            bgImage.src = imageThemes[theme];
-            bgImage.onload = () => { ctx.drawImage(bgImage, 0, 0, width, height); resolve(); };
-            bgImage.onerror = () => { resolve(); };
-        });
+        // Calculate 'contain' size first as base, or 'cover'? Cover is standard for wallpapers.
+        if (imgRatio > canvasRatio) {
+            baseH = height;
+            baseW = height * imgRatio;
+        } else {
+            baseW = width;
+            baseH = width / imgRatio;
+        }
+        
+        // Apply scaling
+        const scaledW = baseW * (bgConfig.scale / 100);
+        const scaledH = baseH * (bgConfig.scale / 100);
+        
+        // Center then apply offsets
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // Offset is percentage of canvas dimension
+        const offsetX = (width * (bgConfig.x / 100));
+        const offsetY = (height * (bgConfig.y / 100));
+        
+        const drawX = centerX - (scaledW / 2) + offsetX;
+        const drawY = centerY - (scaledH / 2) + offsetY;
+
+        ctx.save();
+        ctx.globalAlpha = bgConfig.opacity / 100;
+        ctx.drawImage(customBgImage, drawX, drawY, scaledW, scaledH);
+        ctx.restore();
+    } else {
+        drawDotPattern(ctx, width, height, palette.dayTitle);
     }
-    await backgroundPromise;
 
     // Layout Calculations
     const idealBaseFontSize = isPortrait ? width / 35 : 28;
@@ -464,7 +886,10 @@ async function drawScheduleOnCanvas(ctx, options) {
     ctx.fillStyle = palette.title;
     ctx.font = `${finalFonts.title.weight} ${finalFonts.title.size}px ${fontFamily}`;
     ctx.textAlign = 'center';
-    const mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
+    let mainTitle = sectionName ? `Schedule for ${sectionName}` : 'Weekly Schedule';
+    if (customTitle && customTitle.trim() !== '') {
+        mainTitle = customTitle;
+    }
     const titleY = finalLayout.padding + finalFonts.title.size;
 
     ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
@@ -485,7 +910,28 @@ async function drawScheduleOnCanvas(ctx, options) {
                 const dayName = daysOrder[dayIndex];
                 const daySchedule = data[dayName]?.sort(sortByTime) || [];
                 const cardX = gridStartX + c * (finalCardWidth + finalLayout.gap);
-                drawCard(ctx, dayName, daySchedule, cardX, currentY, finalCardWidth, rowHeight, finalLayout, finalFonts, palette, fontFamily);
+                
+                // Apply Custom Card Dimensions
+                const dims = cardDimensions[dayName] || { w: 100, h: 100, x: 0, y: 0 };
+                const wScale = dims.w / 100;
+                const hScale = dims.h / 100;
+                
+                // Offset is pixel value but needs to be scaled relative to canvas resolution
+                // Since user sliders are -100 to 100, let's assume they mean relative units or raw pixels.
+                // If we want it to feel consistent, we should scale it by the canvas scale factor.
+                const xOffset = (dims.x || 0) * scale;
+                const yOffset = (dims.y || 0) * scale;
+
+                const actualW = finalCardWidth * wScale;
+                const actualH = rowHeight * hScale;
+
+                // Center the card in its grid cell? Or top-left? Center usually looks better if shrinking.
+                // If growing, it will overlap neighbors.
+                // Added xOffset and yOffset to the centered position.
+                const cx = cardX + (finalCardWidth - actualW) / 2 + xOffset;
+                const cy = currentY + (rowHeight - actualH) / 2 + yOffset;
+
+                drawCard(ctx, dayName, daySchedule, cx, cy, actualW, actualH, finalLayout, finalFonts, palette, fontFamily);
             }
         }
         currentY += rowHeight + finalLayout.gap;
@@ -503,6 +949,54 @@ async function drawScheduleOnCanvas(ctx, options) {
     ctx.restore();
 }
 
+async function updatePreview() {
+    if (!currentProcessedData || !currentProcessedData.daysMapData) return;
+    
+    const currentSectionName = currentProcessedData.sectionName || "";
+    const selectedTheme = localStorage.getItem('theme') || 'default';
+    
+    // Determine dimensions based on mode
+    let targetWidth, targetHeight;
+    let isPortrait = false;
+    
+    if (currentViewMode === 'mobile') {
+        targetWidth = 1080;
+        targetHeight = 1920;
+        isPortrait = true;
+    } else {
+        // Desktop
+        targetWidth = 1920;
+        targetHeight = 1080;
+        isPortrait = false;
+    }
+    
+    // Scale down for preview display to fit container height/width
+    // But we render high res then let CSS scale it
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    // CSS styling for preview
+    canvas.style.maxWidth = "100%";
+    canvas.style.maxHeight = "600px";
+    canvas.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)";
+    canvas.style.borderRadius = "12px";
+    
+    const ctx = canvas.getContext('2d');
+    
+    await drawScheduleOnCanvas(ctx, {
+        width: targetWidth,
+        height: targetHeight,
+        isPortrait: isPortrait,
+        data: currentProcessedData.daysMapData,
+        sectionName: currentSectionName,
+        theme: selectedTheme
+    });
+    
+    canvasPreviewWrapper.innerHTML = '';
+    canvasPreviewWrapper.appendChild(canvas);
+    updateZoom(); // Re-apply zoom to new canvas
+}
+
 async function exportScheduleToImage() {
     if (!currentProcessedData || !currentProcessedData.daysMapData) {
         alert("No schedule data to export.");
@@ -511,11 +1005,24 @@ async function exportScheduleToImage() {
     const currentSectionName = currentProcessedData.sectionName || "";
     const selectedTheme = localStorage.getItem('theme') || 'default';
 
-    // High Res Calculation
+    // Decide dimensions based on current view mode or default to screen
+    let targetImageWidth, targetImageHeight, isPortraitView;
     const dpr = window.devicePixelRatio || 2;
-    const targetImageWidth = screen.width * dpr;
-    const targetImageHeight = screen.height * dpr;
-    const isPortraitView = targetImageHeight > targetImageWidth;
+
+    if (currentViewMode === 'mobile') {
+        targetImageWidth = 1080 * 2; // High res
+        targetImageHeight = 1920 * 2;
+        isPortraitView = true;
+    } else if (currentViewMode === 'desktop') {
+        targetImageWidth = 1920 * 2;
+        targetImageHeight = 1080 * 2;
+        isPortraitView = false;
+    } else {
+        // Default to screen based logic if in web view
+        targetImageWidth = screen.width * dpr;
+        targetImageHeight = screen.height * dpr;
+        isPortraitView = targetImageHeight > targetImageWidth;
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = targetImageWidth;

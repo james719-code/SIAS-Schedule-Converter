@@ -272,16 +272,138 @@ footer { padding: 2rem; text-align: center; color: var(--text-muted); border-top
     .hero h1 { font-size: 2.2rem; }
     .btn-text { display: none; } /* Hide button text on mobile, keep icon */
 
+    /* Panel Header Mobile Adjustments */
+    .panel-header-row {
+        justify-content: center;
+        gap: 1rem;
+    }
+    .view-toggles {
+        margin: 0 !important; /* Override inline style */
+        justify-content: center;
+        width: 100%;
+    }
+    .action-buttons {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
     /* Responsive Grid */
     .schedule-grid-container {
         /* Switch to 1 column on mobile, or 2 on small tablets */
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     }
     .day-column { margin-bottom: 10px; }
+    
+    /* Ensure content is not hidden by fixed customization bar */
+    .app-section {
+        padding-bottom: 120px;
+    }
 }
 
 @media (max-width: 480px) {
     .schedule-grid-container {
         grid-template-columns: 1fr; /* Stack days vertically on very small screens */
+    }
+}/* New Grid Layout for Preview Panel */
+.preview-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+@media (min-width: 992px) {
+    .preview-content-grid {
+        grid-template-columns: 300px 1fr;
+    }
+}
+
+.customization-column {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.preview-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.customization-panel > div:first-child {
+    flex-wrap: wrap; /* Allow wrapping on small desktop screens */
+}
+
+/* Mobile Styles for Fixed Customization Panel */
+@media (max-width: 768px) {
+    .preview-content-grid {
+        display: block; /* Stack */
+    }
+
+    .customization-column {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        z-index: 1000;
+        border-radius: 20px 20px 0 0;
+        padding: 0;
+        margin-bottom: 0;
+        transform: translateY(calc(100% - 50px)); /* Minimized state: showing only header */
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .customization-column.expanded {
+        transform: translateY(0);
+    }
+
+    .customization-panel {
+        margin-bottom: 0 !important;
+        border: none;
+        padding: 1.5rem;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* Adjust header for touch target */
+    .customization-panel h3#toggle-customization {
+        margin-bottom: 0;
+        padding-bottom: 1rem;
+        width: 100%;
+    }
+    
+    /* Ensure undo/redo buttons are hidden in minimized state on mobile */
+    .customization-column:not(.expanded) .undo-redo-controls {
+        display: none !important;
+    }
+
+    .customization-panel > div:first-child {
+        margin-bottom: 0;
+        padding-bottom: 10px;
+    }
+
+    /* Hide controls when minimized to prevent focus/interaction */
+    .customization-column:not(.expanded) #customization-controls {
+        display: none !important;
+    }
+    
+    /* Move zoom controls up on mobile */
+    #zoom-controls {
+        bottom: auto !important;
+        top: 10px !important;
+        right: 10px !important;
+    }
+    
+    /* Show controls when expanded, overriding inline styles from toggle logic */
+    .customization-column.expanded #customization-controls {
+        display: grid !important;
+    }
+    
+    /* Ensure content underneath is not hidden by fixed bar */
+    body {
+        padding-bottom: 80px; 
     }
 }

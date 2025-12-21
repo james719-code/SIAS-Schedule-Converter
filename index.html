@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIAS Schedule Organizer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&family=Playfair+Display:wght@500;700&family=Caveat:wght@600;700&family=Fira+Code:wght@400;600&family=Roboto+Slab:wght@400;700&family=Pacifico&family=Oswald:wght@400;600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css" />
 </head>
@@ -89,12 +89,36 @@
                     <button class="theme-btn" data-theme="summer" style="background: #f59e0b;" title="Summer"></button>
                     <button class="theme-btn" data-theme="sakura" style="background: #ec4899;" title="Sakura"></button>
                 </div>
+                <div class="custom-bg-wrapper" style="margin-left: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="bg-upload" class="btn btn-secondary btn-sm" style="cursor: pointer;">
+                        <i class="fas fa-image"></i> Custom BG
+                    </label>
+                    <input type="file" id="bg-upload" accept="image/*" hidden />
+                    <span id="bg-filename" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+                    <button id="clear-bg-btn" class="btn btn-secondary btn-sm" style="display: none;" title="Remove Background">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
+
         </div>
 
         <div class="glass-panel preview-panel" id="preview-container">
             <div class="panel-header-row">
                 <h3><i class="fas fa-calendar-week"></i> Weekly Preview</h3>
+                
+                <div class="view-toggles" style="display: flex; gap: 0.5rem; margin-right: auto; margin-left: 1rem;">
+                    <button class="btn btn-secondary btn-sm active" id="view-web" title="Web Grid View">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="view-mobile" title="Mobile Preview">
+                        <i class="fas fa-mobile-alt"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="view-desktop" title="Desktop Preview">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                </div>
+
                 <div class="action-buttons">
                     <button id="fullscreen-btn" class="btn btn-secondary btn-sm" disabled title="Toggle Full Screen">
                         <i class="fas fa-expand"></i> <span class="btn-text">Full Screen</span>
@@ -105,11 +129,132 @@
                 </div>
             </div>
 
-            <div id="excel-preview" class="schedule-output-area">
-                <div class="empty-state">
-                    <i class="fas fa-calendar-plus"></i>
-                    <p>Upload a file to see your schedule here</p>
+            <!-- Main Layout Grid -->
+            <div class="preview-content-grid">
+                
+                <!-- Left: Customization -->
+                <div class="customization-column">
+                    <div class="customization-panel">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="toggle-customization">
+                                <i class="fas fa-sliders-h"></i> Customization <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 0.8rem;"></i>
+                            </h3>
+                            <div class="undo-redo-controls" style="display: flex; gap: 10px;">
+                                <button id="undo-btn" class="btn btn-secondary btn-sm" title="Undo" disabled><i class="fas fa-undo"></i></button>
+                                <button id="redo-btn" class="btn btn-secondary btn-sm" title="Redo" disabled><i class="fas fa-redo"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div id="customization-controls" style="display: none; grid-template-columns: 1fr; gap: 1.5rem;">
+                            
+                            <!-- General Settings -->
+                            <div class="control-group">
+                                <label class="control-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">General</label>
+                                <input type="text" id="custom-title" class="form-select" placeholder="Custom Title..." style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                            </div>
+
+                            <!-- Font Settings -->
+                            <div class="control-group">
+                                <label class="control-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">Typography</label>
+                                <select id="font-select" class="form-select" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                                    <option value="modern">Modern Sans (Default)</option>
+                                    <option value="serif">Elegant Serif</option>
+                                    <option value="hand">Handwritten</option>
+                                    <option value="mono">Monospace</option>
+                                    <option value="slab">Roboto Slab</option>
+                                    <option value="pacifico">Pacifico</option>
+                                    <option value="oswald">Oswald</option>
+                                    <option value="quicksand">Quicksand</option>
+                                </select>
+                            </div>
+
+                            <!-- Background Settings -->
+                            <div class="control-group">
+                                <label class="control-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">Background</label>
+                                <div style="display: flex; gap: 10px; flex-direction: column;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">Op:</span>
+                                        <input type="range" id="bg-opacity" min="0" max="100" value="100" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">X:</span>
+                                        <input type="range" id="bg-x" min="-100" max="100" value="0" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">Y:</span>
+                                        <input type="range" id="bg-y" min="-100" max="100" value="0" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;"><i class="fas fa-search"></i></span>
+                                        <input type="range" id="bg-scale" min="50" max="200" value="100" style="flex: 1;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Sizing -->
+                            <div class="control-group">
+                                <label class="control-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">Card Style</label>
+                                <div style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px;">
+                                    <span style="width: 20px; font-size: 0.8rem;">Op:</span>
+                                    <input type="range" id="card-opacity" min="0" max="100" value="100" style="flex: 1;">
+                                </div>
+                                <select id="card-day-select" class="form-select" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                                    <option value="all">All Days</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                </select>
+                                <div style="display: flex; gap: 10px; flex-direction: column;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">W:</span>
+                                        <input type="range" id="card-width" min="50" max="150" value="100" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">H:</span>
+                                        <input type="range" id="card-height" min="50" max="150" value="100" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">X:</span>
+                                        <input type="range" id="card-x" min="-100" max="100" value="0" style="flex: 1;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="width: 20px; font-size: 0.8rem;">Y:</span>
+                                        <input type="range" id="card-y" min="-100" max="100" value="0" style="flex: 1;">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Right: Preview -->
+                <div class="preview-column">
+                    <div id="canvas-preview-container" style="position: relative; width: 100%;">
+                        <div id="canvas-preview-wrapper" style="display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.05); padding: 20px; border-radius: 12px; overflow: hidden; min-height: 400px; position: relative;">
+                            <!-- Canvas will be injected here -->
+                        </div>
+                        
+                        <!-- Zoom Controls -->
+                        <div id="zoom-controls" style="display: none; position: absolute; bottom: 20px; right: 20px; background: var(--card-bg); padding: 5px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); gap: 5px; align-items: center;">
+                            <button id="zoom-out" class="btn btn-secondary btn-sm" style="padding: 5px 10px;" title="Zoom Out"><i class="fas fa-minus"></i></button>
+                            <span id="zoom-level" style="font-size: 0.8rem; font-weight: 600; min-width: 40px; text-align: center;">100%</span>
+                            <button id="zoom-in" class="btn btn-secondary btn-sm" style="padding: 5px 10px;" title="Zoom In"><i class="fas fa-plus"></i></button>
+                            <button id="zoom-reset" class="btn btn-secondary btn-sm" style="padding: 5px 10px;" title="Reset Zoom"><i class="fas fa-expand"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="excel-preview" class="schedule-output-area">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-plus"></i>
+                            <p>Upload a file to see your schedule here</p>
+                        </div>
+                    </div>
+                </div>
+            
             </div>
         </div>
 
