@@ -185,7 +185,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved theme from local storage
     const savedTheme = localStorage.getItem('theme') || 'default';
     setTheme(savedTheme);
+    initGhostMode();
 });
+
+// Ghost Mode Logic for Mobile
+function initGhostMode() {
+    const sliders = document.querySelectorAll('.customization-panel input[type="range"]');
+    const column = document.querySelector('.customization-column');
+
+    function enableGhostMode(e) {
+        if (window.innerWidth > 768) return; // Mobile only
+        column.classList.add('ghost-mode');
+        const row = e.target.closest('.slider-row');
+        if (row) row.classList.add('active-row');
+    }
+
+    function disableGhostMode() {
+        column.classList.remove('ghost-mode');
+        document.querySelectorAll('.slider-row.active-row').forEach(el => {
+            el.classList.remove('active-row');
+        });
+    }
+
+    sliders.forEach(slider => {
+        slider.addEventListener('touchstart', enableGhostMode);
+        slider.addEventListener('touchend', disableGhostMode);
+        slider.addEventListener('mousedown', enableGhostMode);
+        slider.addEventListener('mouseup', disableGhostMode);
+        // Also handle mouseleave in case they drag out
+        slider.addEventListener('mouseleave', disableGhostMode); 
+    });
+}
 
 // Toggle Customization Panel
 if (toggleCustomization) {
