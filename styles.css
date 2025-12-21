@@ -330,6 +330,9 @@ footer { padding: 2rem; text-align: center; color: var(--text-muted); border-top
     flex-direction: column;
 }
 
+/* Ensure customization controls are visible by default in this layout if desired, 
+   but logic toggles display:none. We'll rely on JS for expand/collapse. */
+
 .customization-panel > div:first-child {
     flex-wrap: wrap; /* Allow wrapping on small desktop screens */
 }
@@ -406,4 +409,15 @@ footer { padding: 2rem; text-align: center; color: var(--text-muted); border-top
     body {
         padding-bottom: 80px; 
     }
+}
+
+/* Drag and Pan Styles for Preview */
+#canvas-preview-wrapper {
+    cursor: grab;
+    overflow: hidden !important; /* Ensure content is clipped */
+    touch-action: none; /* Prevent default scroll behavior on touch */
+}
+
+#canvas-preview-wrapper:active {
+    cursor: grabbing;
 }
