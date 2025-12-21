@@ -409,6 +409,48 @@ footer { padding: 2rem; text-align: center; color: var(--text-muted); border-top
     body {
         padding-bottom: 80px; 
     }
+
+    /* Ghost Mode: Hide everything except active control during interaction */
+    .customization-column.ghost-mode {
+        background: transparent !important;
+        border-top: none !important;
+        box-shadow: none !important;
+        pointer-events: none; /* Let clicks pass through empty areas */
+    }
+
+    .customization-column.ghost-mode .customization-panel {
+        background: transparent !important;
+    }
+
+    /* Hide header and non-active controls */
+    .customization-column.ghost-mode h3#toggle-customization,
+    .customization-column.ghost-mode .undo-redo-controls,
+    .customization-column.ghost-mode .control-label,
+    .customization-column.ghost-mode .form-select,
+    .customization-column.ghost-mode .slider-row:not(.active-row) {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+
+    /* Show active slider row only */
+    .customization-column.ghost-mode .slider-row.active-row {
+        opacity: 1;
+        pointer-events: auto;
+        background: var(--card-bg);
+        border-radius: 50px; /* Pill shape for single row */
+        padding: 8px 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        border: 1px solid var(--border-color);
+        display: flex; /* Ensure it stays flex */
+    }
+    
+    /* Ensure parent containers don't hide children */
+    .customization-column.ghost-mode .control-group {
+        opacity: 1;
+        background: transparent;
+        border: none;
+    }
 }
 
 /* Drag and Pan Styles for Preview */
