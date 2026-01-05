@@ -661,28 +661,59 @@ function transformBackendDataToDaysMap(backendData) {
 function convertTo24HourTime(timeString) {
     if (!timeString || typeof timeString !== "string") return 0;
     const timeLower = timeString.toLowerCase().trim();
-    const match = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*(am|pm)/);
-    if (!match) return 0;
-    const hourMinPart = match[1]; const period = match[2];
-    let [hourStr, minuteStr] = hourMinPart.split(":");
-    let hour = parseInt(hourStr, 10); let minute = minuteStr ? parseInt(minuteStr, 10) : 0;
-    if (isNaN(hour) || isNaN(minute)) return 0;
-    if (period === "pm" && hour !== 12) hour += 12; else if (period === "am" && hour === 12) hour = 0;
-    return hour * 60 + minute;
+    
+    // Case 1: Direct match like "1pm", "10am", "8:30am"
+    let match = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*(am|pm)/);
+    if (match) {
+        const hourMinPart = match[1];
+        const period = match[2];
+        let [hourStr, minuteStr] = hourMinPart.split(":");
+        let hour = parseInt(hourStr, 10);
+        let minute = minuteStr ? parseInt(minuteStr, 10) : 0;
+        if (isNaN(hour) || isNaN(minute)) return 0;
+        if (period === "pm" && hour !== 12) hour += 12;
+        else if (period === "am" && hour === 12) hour = 0;
+        return hour * 60 + minute;
+    }
+    
+    // Case 2: Range like "1-3pm", "10-12pm", "8-9am" (no am/pm on start, inherit from end)
+    const rangeMatch = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*-\s*\d{1,2}(?::\d{2})?\s*(am|pm)/);
+    if (rangeMatch) {
+        const hourMinPart = rangeMatch[1];
+        const period = rangeMatch[2]; // Inherit period from end time
+        let [hourStr, minuteStr] = hourMinPart.split(":");
+        let hour = parseInt(hourStr, 10);
+        let minute = minuteStr ? parseInt(minuteStr, 10) : 0;
+        if (isNaN(hour) || isNaN(minute)) return 0;
+        if (period === "pm" && hour !== 12) hour += 12;
+        else if (period === "am" && hour === 12) hour = 0;
+        return hour * 60 + minute;
+    }
+    
+    return 0;
 }
 
 const sortByTime = (a, b) => {
-    function extractActualStartTime(fullTimeStr) {
+    function extractStartTimeForConversion(fullTimeStr) {
         if (!fullTimeStr || typeof fullTimeStr !== "string") return "";
-        let match = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
-        if (match && match[1]) return match[1].trim();
-        const firstPartMatch = fullTimeStr.match(/^(\d{1,2}(?::\d{2})?)/);
-        if (firstPartMatch && firstPartMatch[1]) {
-            return firstPartMatch[1];
+        const timeLower = fullTimeStr.toLowerCase().trim();
+        
+        // Case 1: Start has its own am/pm like "10am-12pm" or "1am-2am"
+        const startWithPeriod = timeLower.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+        if (startWithPeriod) {
+            return startWithPeriod[1].trim();
         }
-        return fullTimeStr.split("-")[0].trim();
+        
+        // Case 2: Range where only end has am/pm like "1-3pm" - return full string for convertTo24HourTime to handle
+        const rangePattern = timeLower.match(/^(\d{1,2}(?::\d{2})?)\s*-\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)/i);
+        if (rangePattern) {
+            return fullTimeStr.trim(); // Return full range, let convertTo24HourTime extract start with inherited period
+        }
+        
+        // Fallback: just return as-is
+        return fullTimeStr.trim();
     }
-    return convertTo24HourTime(extractActualStartTime(a.time)) - convertTo24HourTime(extractActualStartTime(b.time));
+    return convertTo24HourTime(extractStartTimeForConversion(a.time)) - convertTo24HourTime(extractStartTimeForConversion(b.time));
 };
 
 function renderScheduleWeb(daysMap) {
