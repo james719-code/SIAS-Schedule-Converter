@@ -57,6 +57,7 @@ body {
    ========================================= */
 .navbar {
     display: flex;
+    position: relative;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 5%;
@@ -87,7 +88,13 @@ body {
 .text-highlight { color: var(--primary); }
 
 .nav-links {
-    display: flex; gap: 2rem; list-style: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    gap: 2rem;
+    list-style: none;
 }
 .nav-link {
     text-decoration: none;
@@ -263,7 +270,7 @@ footer { padding: 2rem; text-align: center; color: var(--text-muted); border-top
 @media (max-width: 768px) {
     .navbar { padding: 1rem; }
     .nav-links {
-        display: none; position: absolute; top: 100%; left: 0; width: 100%;
+        display: none; position: absolute; top: 100%; left: 50%; width: 100%;
         background: var(--bg-color); flex-direction: column; padding: 2rem;
         border-bottom: 1px solid var(--border-color); text-align: center;
     }
