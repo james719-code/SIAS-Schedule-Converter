@@ -1,5 +1,8 @@
 // Developed By: James Ryan S. Gallego
 
+// function imports 
+import initScrollSpy from "./scrollSpy.js";
+
 const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
 // DOM Element References
@@ -1169,3 +1172,6 @@ async function exportScheduleToImage() {
         exportButton.disabled = false;
     }
 }
+
+// Initialize scrollspy
+initScrollSpy();
