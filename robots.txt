@@ -1,0 +1,11 @@
+# robots.txt for SIAS Schedule Organizer
+# https://sias-schedule-organizer.netlify.app
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://sias-schedule-organizer.netlify.app/sitemap.xml
+
+# Crawl-delay (optional, for politeness)
+Crawl-delay: 1
