@@ -7,20 +7,22 @@ const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
 // Screen Detection and Export
 export const getDeviceInfo = () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const screenW = window.screen.width;
-    const screenH = window.screen.height;
     const dpr = window.devicePixelRatio || 1;
+    const logicalW = window.screen.width;
+    const logicalH = window.screen.height;
+    const physicalW = Math.round(logicalW * dpr);
+    const physicalH = Math.round(logicalH * dpr);
 
     return {
-        width,
-        height,
-        screenW,
-        screenH,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        logicalW,
+        logicalH,
+        physicalW,
+        physicalH,
         dpr,
-        isMobile: width <= 768,
-        type: width <= 768 ? 'mobile' : 'desktop'
+        isMobile: logicalW <= 768,
+        type: logicalW <= 768 ? 'mobile' : 'desktop'
     };
 };
 
@@ -30,14 +32,14 @@ export const currentScreenType = getDeviceInfo().type;
 const screenSizeDisplay = document.getElementById("screen-size-display");
 
 function updateScreenSizeDisplay() {
+    const info = getDeviceInfo();
     if (screenSizeDisplay) {
-        screenSizeDisplay.textContent = `Screen: ${window.screen.width} x ${window.screen.height}`;
+        screenSizeDisplay.textContent = `Wallpaper Size: ${info.physicalW} x ${info.physicalH}`;
     }
 
-    // Hide/Show preview toggles based on device
-    const isMobile = window.innerWidth <= 768;
-    if (viewMobileBtn) viewMobileBtn.style.display = isMobile ? 'inline-flex' : 'none';
-    if (viewDesktopBtn) viewDesktopBtn.style.display = isMobile ? 'none' : 'inline-flex';
+    // Hide/Show preview toggles based on actual hardware device type
+    if (viewMobileBtn) viewMobileBtn.style.display = info.isMobile ? 'inline-flex' : 'none';
+    if (viewDesktopBtn) viewDesktopBtn.style.display = info.isMobile ? 'none' : 'inline-flex';
 }
 
 // DOM Element References
@@ -1108,14 +1110,19 @@ async function updatePreview() {
     let targetWidth, targetHeight;
     let isPortrait = false;
 
+    const info = getDeviceInfo();
     if (currentViewMode === 'mobile') {
-        targetWidth = 1080;
-        targetHeight = 1920;
+        if (!info.isMobile) {
+            targetWidth = 1080;
+            targetHeight = 1920;
+        } else {
+            targetWidth = info.physicalW;
+            targetHeight = info.physicalH;
+        }
         isPortrait = true;
     } else {
-        // Use current screen resolution for desktop preview
-        targetWidth = window.screen.width;
-        targetHeight = window.screen.height;
+        targetWidth = info.physicalW;
+        targetHeight = info.physicalH;
         isPortrait = targetHeight > targetWidth;
     }
 
@@ -1156,16 +1163,20 @@ async function exportScheduleToImage() {
 
     // Decide dimensions based on current view mode or default to screen
     let targetImageWidth, targetImageHeight, isPortraitView;
-    const dpr = window.devicePixelRatio || 2;
 
+    const info = getDeviceInfo();
     if (currentViewMode === 'mobile') {
-        targetImageWidth = 1080;
-        targetImageHeight = 1920;
+        if (!info.isMobile) {
+            targetImageWidth = 1080;
+            targetImageHeight = 1920;
+        } else {
+            targetImageWidth = info.physicalW;
+            targetImageHeight = info.physicalH;
+        }
         isPortraitView = true;
     } else {
-        // Match current screen resolution exactly for best wallpaper fit
-        targetImageWidth = window.screen.width;
-        targetImageHeight = window.screen.height;
+        targetImageWidth = info.physicalW;
+        targetImageHeight = info.physicalH;
         isPortraitView = targetImageHeight > targetImageWidth;
     }
 
