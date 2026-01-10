@@ -7,11 +7,26 @@ const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
 
 // Screen Detection and Export
 export const getDeviceInfo = () => {
-    const dpr = window.devicePixelRatio || 1;
+    // Attempt to get the real DPR via matchMedia if devicePixelRatio is hidden/spoofed
+    let detectedDPR = window.devicePixelRatio || 1;
+
+    // Check common high-density ratios if DPR is 1
+    if (detectedDPR === 1) {
+        const ratios = [3.5, 3.0, 2.625, 2.5, 2.0, 1.75, 1.5, 1.35, 1.25];
+        for (const r of ratios) {
+            if (window.matchMedia(`(-webkit-min-device-pixel-ratio: ${r}), (min-resolution: ${r * 96}dpi)`).matches) {
+                detectedDPR = r;
+                break;
+            }
+        }
+    }
+
     const logicalW = window.screen.width;
     const logicalH = window.screen.height;
-    const physicalW = Math.round(logicalW * dpr);
-    const physicalH = Math.round(logicalH * dpr);
+
+    // On some mobile browsers, outerWidth/Height reflects the physical resolution
+    const physicalW = Math.max(Math.round(logicalW * detectedDPR), window.outerWidth || 0);
+    const physicalH = Math.max(Math.round(logicalH * detectedDPR), window.outerHeight || 0);
 
     return {
         width: window.innerWidth,
@@ -20,9 +35,9 @@ export const getDeviceInfo = () => {
         logicalH,
         physicalW,
         physicalH,
-        dpr,
-        isMobile: logicalW <= 768,
-        type: logicalW <= 768 ? 'mobile' : 'desktop'
+        dpr: detectedDPR,
+        isMobile: logicalW <= 768 || window.innerWidth <= 768,
+        type: (logicalW <= 768 || window.innerWidth <= 768) ? 'mobile' : 'desktop'
     };
 };
 
