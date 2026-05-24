@@ -3,7 +3,9 @@
 // function imports 
 import initScrollSpy from "./scrollSpy.js";
 
-const API_ENDPOINT = 'https://flaskproject-gurc.onrender.com/process-pdf';
+const API_BASE_URL = 'https://flaskproject-gurc.onrender.com';
+const PROCESS_API_ENDPOINT = `${API_BASE_URL}/process-pdf`;
+const COMPARE_API_ENDPOINT = `${API_BASE_URL}/compare-schedules`;
 
 // Screen Detection and Export
 export const getDeviceInfo = () => {
@@ -60,6 +62,15 @@ function updateScreenSizeDisplay() {
 // DOM Element References
 const uploadInput = document.getElementById("xlsx-upload");
 const dragDropArea = document.getElementById("drag-drop-area");
+const uploadModeButtons = document.querySelectorAll("[data-upload-mode]");
+const uploadTitle = document.getElementById("upload-title");
+const uploadHelp = document.getElementById("upload-help");
+const selectedFilesList = document.getElementById("selected-files");
+const compareSettings = document.getElementById("compare-settings");
+const compareWindowPresetSelect = document.getElementById("compare-window-preset");
+const compareDayStartInput = document.getElementById("compare-day-start");
+const compareDayEndInput = document.getElementById("compare-day-end");
+const compareMinMinutesInput = document.getElementById("compare-min-minutes");
 const excelPreview = document.getElementById("excel-preview");
 const previewContainer = document.getElementById("preview-container");
 const exportButton = document.getElementById("export-image-btn");
@@ -102,6 +113,8 @@ const zoomResetBtn = document.getElementById("zoom-reset");
 const zoomLevelSpan = document.getElementById("zoom-level");
 
 let currentProcessedData = null;
+let currentCompareData = null;
+let uploadMode = 'single';
 let customBgImage = null;
 let currentViewMode = 'web'; // 'web', 'mobile', 'desktop'
 let previewZoom = 1.0;
@@ -240,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved theme from local storage
     const savedTheme = localStorage.getItem('theme') || 'default';
     setTheme(savedTheme);
+    setUploadMode('single');
     initGhostMode();
     updateScreenSizeDisplay();
 });
@@ -378,7 +392,7 @@ function updateCardDimensions() {
 
 // Drag and Drop File Handling
 dragDropArea.addEventListener("click", () => uploadInput.click());
-uploadInput.addEventListener("change", (e) => handleFileSelect(e.target.files[0]));
+uploadInput.addEventListener("change", (e) => handleFilesSelect(e.target.files));
 dragDropArea.addEventListener("dragover", (e) => {
     e.preventDefault();
     dragDropArea.style.borderColor = "var(--primary)";
@@ -392,7 +406,21 @@ dragDropArea.addEventListener("drop", (e) => {
     e.preventDefault();
     dragDropArea.style.borderColor = "";
     dragDropArea.style.backgroundColor = "";
-    handleFileSelect(e.dataTransfer.files[0]);
+    handleFilesSelect(e.dataTransfer.files);
+});
+
+uploadModeButtons.forEach(button => {
+    button.addEventListener('click', () => setUploadMode(button.dataset.uploadMode));
+});
+
+compareWindowPresetSelect.addEventListener('change', () => {
+    applyCompareWindowPreset(compareWindowPresetSelect.value);
+});
+
+[compareDayStartInput, compareDayEndInput].forEach(input => {
+    input.addEventListener('input', () => {
+        compareWindowPresetSelect.value = 'custom';
+    });
 });
 
 // Theme Switching Handlers
@@ -586,7 +614,98 @@ function toggleFullScreen() {
     }
 }
 
+function setUploadMode(mode) {
+    uploadMode = mode === 'compare' ? 'compare' : 'single';
+
+    uploadModeButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.uploadMode === uploadMode);
+    });
+
+    uploadInput.multiple = uploadMode === 'compare';
+    dragDropArea.classList.toggle('is-compare', uploadMode === 'compare');
+    compareSettings.hidden = uploadMode !== 'compare';
+
+    if (uploadMode === 'compare') {
+        uploadTitle.textContent = "Drop 2 PDFs here";
+        uploadHelp.innerHTML = 'or <span class="browse-text">browse files</span> to compare free time';
+    } else {
+        uploadTitle.textContent = "Drop PDF here";
+        uploadHelp.innerHTML = 'or <span class="browse-text">browse files</span>';
+    }
+}
+
+function applyCompareWindowPreset(preset) {
+    const windows = {
+        'class-day': ['07:00', '21:00'],
+        'all-day': ['00:00', '23:59'],
+        morning: ['06:00', '12:00'],
+        afternoon: ['12:00', '18:00'],
+        evening: ['18:00', '23:00'],
+    };
+
+    const selectedWindow = windows[preset];
+    if (!selectedWindow) return;
+
+    compareDayStartInput.value = selectedWindow[0];
+    compareDayEndInput.value = selectedWindow[1];
+}
+
+function setWallpaperControlsEnabled(enabled) {
+    if (viewMobileBtn) viewMobileBtn.disabled = !enabled;
+    if (viewDesktopBtn) viewDesktopBtn.disabled = !enabled;
+    if (exportButton) exportButton.disabled = !enabled;
+}
+
+function setSelectedFiles(files) {
+    const selectedFiles = Array.from(files || []);
+
+    if (!selectedFiles.length) {
+        selectedFilesList.hidden = true;
+        selectedFilesList.innerHTML = "";
+        return;
+    }
+
+    selectedFilesList.innerHTML = "";
+    selectedFiles.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'selected-file-pill';
+
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-file-pdf';
+
+        const name = document.createElement('span');
+        name.textContent = file.name;
+
+        item.append(icon, name);
+        selectedFilesList.appendChild(item);
+    });
+    selectedFilesList.hidden = false;
+}
+
 // Core File Processing and API Interaction
+
+async function handleFilesSelect(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    setSelectedFiles(files);
+
+    if (uploadMode === 'compare' || files.length > 1) {
+        if (files.length !== 2) {
+            showError("Please select exactly two PDF files to compare schedules.");
+            return;
+        }
+
+        if (uploadMode !== 'compare') {
+            setUploadMode('compare');
+        }
+
+        await handleCompareFileSelect(files);
+        return;
+    }
+
+    await handleFileSelect(files[0]);
+}
 
 async function handleFileSelect(file) {
     if (!file) return;
@@ -602,19 +721,20 @@ async function handleFileSelect(file) {
 
     // Reset UI state before processing
     currentProcessedData = null;
+    currentCompareData = null;
     excelPreview.innerHTML = `
         <div class="empty-state">
             <i class="fas fa-spinner fa-spin"></i>
             <p>Processing your schedule...</p>
         </div>`;
-    if (exportButton) exportButton.disabled = true;
+    setWallpaperControlsEnabled(false);
     if (fullscreenButton) fullscreenButton.disabled = true;
 
     const formData = new FormData();
     formData.append('pdf_file', file);
 
     try {
-        const response = await fetch(API_ENDPOINT, {
+        const response = await fetch(PROCESS_API_ENDPOINT, {
             method: 'POST',
             body: formData,
         });
@@ -643,7 +763,7 @@ async function handleFileSelect(file) {
         if (currentViewMode !== 'web') updatePreview();
 
         // Enable buttons
-        if (exportButton) exportButton.disabled = false;
+        setWallpaperControlsEnabled(true);
         if (fullscreenButton) fullscreenButton.disabled = false;
 
     } catch (error) {
@@ -652,17 +772,165 @@ async function handleFileSelect(file) {
     }
 }
 
+async function handleCompareFileSelect(files) {
+    for (const file of files) {
+        if (file.size === 0) {
+            showError(`${file.name} is empty.`);
+            return;
+        }
+
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+            showError("Both files must be valid .pdf files.");
+            return;
+        }
+    }
+
+    currentProcessedData = null;
+    currentCompareData = null;
+    switchView('web');
+    setWallpaperControlsEnabled(false);
+    if (fullscreenButton) fullscreenButton.disabled = true;
+
+    excelPreview.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Comparing schedules...</p>
+        </div>`;
+
+    const formData = new FormData();
+    files.forEach(file => formData.append('pdf_files', file));
+    formData.append('day_start', compareDayStartInput.value || '07:00');
+    formData.append('day_end', compareDayEndInput.value || '21:00');
+    formData.append('min_minutes', compareMinMinutesInput.value || '30');
+
+    try {
+        const response = await fetch(COMPARE_API_ENDPOINT, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Server Status: ${response.status}`);
+        }
+
+        currentCompareData = data;
+        renderCompareSchedules(data);
+        if (fullscreenButton) fullscreenButton.disabled = false;
+    } catch (error) {
+        console.error("Compare Backend Error:", error);
+        showError(error.message);
+    }
+}
+
 function showError(message) {
+    currentProcessedData = null;
+    currentCompareData = null;
     excelPreview.innerHTML = `
         <div class="empty-state" style="color: var(--primary);">
             <i class="fas fa-exclamation-circle"></i>
             <p>Error: ${message}</p>
         </div>`;
-    if (exportButton) exportButton.disabled = true;
+    setWallpaperControlsEnabled(false);
     if (fullscreenButton) fullscreenButton.disabled = true;
 }
 
 // Data Transformation Logic
+
+const DISPLAY_DAY_ALIASES = {
+    MONDAY: "Monday",
+    MON: "Monday",
+    M: "Monday",
+    TUESDAY: "Tuesday",
+    TUES: "Tuesday",
+    TUE: "Tuesday",
+    TU: "Tuesday",
+    T: "Tuesday",
+    WEDNESDAY: "Wednesday",
+    WED: "Wednesday",
+    W: "Wednesday",
+    THURSDAY: "Thursday",
+    THURS: "Thursday",
+    THUR: "Thursday",
+    THU: "Thursday",
+    TH: "Thursday",
+    FRIDAY: "Friday",
+    FRI: "Friday",
+    F: "Friday",
+    SATURDAY: "Saturday",
+    SAT: "Saturday",
+    S: "Saturday",
+};
+
+const DISPLAY_DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function parseCompactDisplayDays(token) {
+    const normalized = token.toUpperCase().trim();
+    if (!normalized) return [];
+
+    if (DISPLAY_DAY_ALIASES[normalized]) {
+        return [DISPLAY_DAY_ALIASES[normalized]];
+    }
+
+    if (!/^[MTWHFS]+$/.test(normalized)) return [];
+
+    const days = [];
+    let index = 0;
+
+    while (index < normalized.length) {
+        if (normalized.substring(index, index + 2) === "TH") {
+            days.push("Thursday");
+            index += 2;
+        } else {
+            const day = DISPLAY_DAY_ALIASES[normalized.charAt(index)];
+            if (day) days.push(day);
+            index += 1;
+        }
+    }
+
+    return days;
+}
+
+function extractDisplayDays(dayText) {
+    const found = [];
+
+    for (const token of dayText.toUpperCase().match(/[A-Z]+/g) || []) {
+        for (const day of parseCompactDisplayDays(token)) {
+            if (!found.includes(day)) found.push(day);
+        }
+    }
+
+    return DISPLAY_DAYS_ORDER.filter(day => found.includes(day));
+}
+
+function cleanScheduleTimeForDisplay(timeText) {
+    return timeText
+        .replace(/[–—−]/g, "-")
+        .replace(/\bto\b/ig, "-")
+        .replace(/a\.?m\.?/ig, "AM")
+        .replace(/p\.?m\.?/ig, "PM")
+        .replace(/\s+/g, "");
+}
+
+function parseScheduleForDisplay(rawTimeString) {
+    const raw = (rawTimeString || "").replace(/\s+/g, " ").trim();
+    const timeMatch = raw.match(
+        /(\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)\s*(?:-|–|—|−|\bto\b)\s*(\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)/i
+    );
+
+    if (!timeMatch) return null;
+
+    const dayText = `${raw.slice(0, timeMatch.index)} ${raw.slice(timeMatch.index + timeMatch[0].length)}`;
+    const days = extractDisplayDays(dayText);
+
+    if (!days.length) return null;
+
+    return {
+        days,
+        time: cleanScheduleTimeForDisplay(timeMatch[0]),
+    };
+}
 
 function transformBackendDataToDaysMap(backendData) {
     const daysMap = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] };
@@ -671,42 +939,23 @@ function transformBackendDataToDaysMap(backendData) {
         return { daysMapData: daysMap, sectionName: "" };
     }
 
-    const dayRegex = /([MTWFHSaTh]+)$/i;
-
     for (const subjectData of backendData.subjects) {
-        const cleanedSubject = subjectData.subject.replace(/\s+/g, ' ').trim();
+        const cleanedSubject = (subjectData.subject || "N/A").replace(/\s+/g, ' ').trim();
 
-        for (const schedule of subjectData.schedules) {
-            const originalTimeString = schedule.time;
-            const match = originalTimeString.match(dayRegex);
+        for (const schedule of subjectData.schedules || []) {
+            const originalTimeString = schedule.time || "";
+            const parsedSchedule = parseScheduleForDisplay(originalTimeString);
 
-            if (match) {
-                const daysString = match[1].toUpperCase();
-                const timePartRaw = originalTimeString.substring(0, match.index);
-                const cleanedTimePart = timePartRaw.replace(/\s/g, '');
-                const cleanedRoom = schedule.room.replace(/\s/g, '');
-
+            if (parsedSchedule) {
                 const scheduleEntry = {
                     subject: cleanedSubject,
-                    time: cleanedTimePart,
-                    room: cleanedRoom,
+                    time: parsedSchedule.time,
+                    room: (schedule.room || "N/A").replace(/\s/g, ''),
                 };
 
-                let i = 0;
-                while (i < daysString.length) {
-                    if (daysString.substring(i, i + 2) === "TH") {
-                        daysMap.Thursday.push(scheduleEntry);
-                        i += 2;
-                    } else {
-                        const dayCode = daysString.charAt(i);
-                        if (dayCode === "M") daysMap.Monday.push(scheduleEntry);
-                        else if (dayCode === "T") daysMap.Tuesday.push(scheduleEntry);
-                        else if (dayCode === "W") daysMap.Wednesday.push(scheduleEntry);
-                        else if (dayCode === "F") daysMap.Friday.push(scheduleEntry);
-                        else if (dayCode === "S") daysMap.Saturday.push(scheduleEntry);
-                        i += 1;
-                    }
-                }
+                parsedSchedule.days.forEach(day => {
+                    daysMap[day].push(scheduleEntry);
+                });
             }
         }
     }
@@ -815,6 +1064,159 @@ function renderScheduleWeb(daysMap) {
         container.appendChild(dayColumn);
     });
 
+    excelPreview.innerHTML = '';
+    excelPreview.appendChild(container);
+}
+
+function makeSummaryPill(iconClass, text) {
+    const pill = document.createElement('span');
+    pill.className = 'summary-pill';
+
+    const icon = document.createElement('i');
+    icon.className = iconClass;
+
+    const label = document.createElement('span');
+    label.textContent = text;
+
+    pill.append(icon, label);
+    return pill;
+}
+
+function getFileDisplayName(fileData, fallbackLabel) {
+    const section = fileData?.sectionName || fileData?.analysis?.sectionName || "";
+    return section || fileData?.filename || fallbackLabel;
+}
+
+function getCompareFileStats(fileData) {
+    return {
+        subjects: fileData?.subjects?.length || 0,
+        parsed: fileData?.analysis?.parsedMeetings?.length || 0,
+    };
+}
+
+function makeStatBadge(label, value, modifier = "") {
+    const badge = document.createElement('span');
+    badge.className = `compare-stat ${modifier}`.trim();
+
+    const valueEl = document.createElement('strong');
+    valueEl.textContent = value;
+
+    const labelEl = document.createElement('span');
+    labelEl.textContent = label;
+
+    badge.append(valueEl, labelEl);
+    return badge;
+}
+
+function renderCompareFileCard(fileData, label) {
+    const card = document.createElement('div');
+    card.className = 'compare-file-card';
+
+    const labelPill = document.createElement('span');
+    labelPill.className = 'compare-file-label';
+    labelPill.textContent = label;
+
+    const title = document.createElement('h5');
+    title.textContent = getFileDisplayName(fileData, label);
+
+    const filename = document.createElement('p');
+    filename.className = 'compare-filename';
+    filename.textContent = fileData?.filename || "Uploaded PDF";
+
+    const stats = getCompareFileStats(fileData);
+    const statRow = document.createElement('div');
+    statRow.className = 'compare-stats';
+    statRow.append(
+        makeStatBadge('subjects', stats.subjects),
+        makeStatBadge('parsed', stats.parsed, stats.parsed === 0 ? 'is-empty' : 'is-good')
+    );
+
+    card.append(labelPill, title, filename, statRow);
+    return card;
+}
+
+function renderCompareSchedules(compareData) {
+    const container = document.createElement('div');
+    container.className = 'compare-results';
+
+    const header = document.createElement('div');
+    header.className = 'compare-header';
+
+    const headingWrap = document.createElement('div');
+    const heading = document.createElement('h4');
+    heading.textContent = "Common Free Time";
+    const subtitle = document.createElement('p');
+    subtitle.className = 'no-free-time';
+    subtitle.textContent = "Shared open blocks based on the two uploaded COE schedules.";
+    headingWrap.append(heading, subtitle);
+
+    const settings = document.createElement('div');
+    settings.className = 'compare-settings-summary';
+    settings.append(
+        makeSummaryPill('far fa-clock', `${compareData.settings?.dayStart || "7:00 AM"} - ${compareData.settings?.dayEnd || "9:00 PM"}`),
+        makeSummaryPill('fas fa-hourglass-half', `${compareData.settings?.minimumFreeMinutes || 30}+ min`)
+    );
+
+    header.append(headingWrap, settings);
+    container.appendChild(header);
+
+    const fileGrid = document.createElement('div');
+    fileGrid.className = 'compare-file-grid';
+    fileGrid.append(
+        renderCompareFileCard(compareData.firstFile, "First"),
+        renderCompareFileCard(compareData.secondFile, "Second")
+    );
+    container.appendChild(fileGrid);
+
+    const freeGrid = document.createElement('div');
+    freeGrid.className = 'common-free-grid';
+
+    for (const dayData of compareData.commonFreeSchedules || []) {
+        const card = document.createElement('div');
+        card.className = 'free-day-card';
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'free-day-header';
+
+        const dayTitle = document.createElement('h5');
+        dayTitle.textContent = dayData.day;
+
+        const count = document.createElement('span');
+        count.textContent = `${dayData.free?.length || 0} slot${(dayData.free?.length || 0) === 1 ? '' : 's'}`;
+
+        dayHeader.append(dayTitle, count);
+        card.appendChild(dayHeader);
+
+        if (!dayData.free || dayData.free.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'no-free-time';
+            empty.textContent = "No common free time";
+            card.appendChild(empty);
+        } else {
+            const slots = document.createElement('div');
+            slots.className = 'free-slot-list';
+
+            dayData.free.forEach(slot => {
+                const slotCard = document.createElement('div');
+                slotCard.className = 'free-slot-card';
+
+                const time = document.createElement('strong');
+                time.textContent = `${slot.start} - ${slot.end}`;
+
+                const duration = document.createElement('span');
+                duration.textContent = `${slot.durationMinutes} min`;
+
+                slotCard.append(time, duration);
+                slots.appendChild(slotCard);
+            });
+
+            card.appendChild(slots);
+        }
+
+        freeGrid.appendChild(card);
+    }
+
+    container.appendChild(freeGrid);
     excelPreview.innerHTML = '';
     excelPreview.appendChild(container);
 }

@@ -200,7 +200,16 @@
                 <div class="glass-panel upload-panel">
                     <div class="panel-header">
                         <h2 id="generator-heading"><i class="fas fa-file-import" aria-hidden="true"></i> Upload COE</h2>
-                        <p>Select your PDF file to visualize your week.</p>
+                        <p>Select one PDF for a wallpaper schedule or two PDFs to compare free time.</p>
+                    </div>
+
+                    <div class="upload-mode-toggle" role="group" aria-label="Upload mode">
+                        <button type="button" class="mode-btn active" data-upload-mode="single">
+                            <i class="fas fa-calendar-day"></i> Single
+                        </button>
+                        <button type="button" class="mode-btn" data-upload-mode="compare">
+                            <i class="fas fa-code-compare"></i> Compare
+                        </button>
                     </div>
 
                     <div class="drag-drop-area" id="drag-drop-area">
@@ -209,10 +218,37 @@
                             <div class="icon-circle">
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <h3>Drop PDF here</h3>
-                            <p>or <span class="browse-text">browse files</span></p>
+                            <h3 id="upload-title">Drop PDF here</h3>
+                            <p id="upload-help">or <span class="browse-text">browse files</span></p>
                             <span class="file-tag">.PDF only</span>
                         </div>
+                    </div>
+                    <div class="selected-files" id="selected-files" hidden></div>
+
+                    <div class="compare-settings" id="compare-settings" hidden>
+                        <label>
+                            <span>Availability Window</span>
+                            <select id="compare-window-preset">
+                                <option value="class-day">Class Day</option>
+                                <option value="all-day">All Day</option>
+                                <option value="morning">Morning</option>
+                                <option value="afternoon">Afternoon</option>
+                                <option value="evening">Evening</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Day Start</span>
+                            <input type="time" id="compare-day-start" value="07:00">
+                        </label>
+                        <label>
+                            <span>Day End</span>
+                            <input type="time" id="compare-day-end" value="21:00">
+                        </label>
+                        <label>
+                            <span>Minimum Free Minutes</span>
+                            <input type="number" id="compare-min-minutes" min="1" step="5" value="30">
+                        </label>
                     </div>
 
                     <div class="theme-selector-wrapper">
