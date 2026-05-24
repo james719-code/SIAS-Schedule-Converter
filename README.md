@@ -1,6 +1,7 @@
 # SIAS Schedule Organizer
 
 Convert a SIAS Certificate of Enrollment (COE) PDF into a clean weekly schedule preview and export it as a phone or desktop wallpaper.
+You can also upload two COE PDFs to compare schedules and find common free time.
 
 ## Demo
 
@@ -25,6 +26,7 @@ Key features:
 - Upload SIAS COE PDF files.
 - Extract subjects, meeting times, days, and rooms through a hosted parser.
 - Preview schedules in a weekly grid.
+- Compare two PDFs to find shared free-time blocks.
 - Switch between web, mobile, and desktop wallpaper views.
 - Customize themes, fonts, title text, background image position, opacity, and card layout.
 - Export the finished schedule as a PNG image.
@@ -37,6 +39,20 @@ The frontend posts the selected file to the configured parser endpoint:
 
 ```js
 https://flaskproject-gurc.onrender.com/process-pdf
+```
+
+When Compare mode is selected, the frontend posts exactly two PDFs to:
+
+```js
+https://flaskproject-gurc.onrender.com/compare-schedules
+```
+
+The compare request uses one multipart field named `pdf_files` with two files and optional form fields:
+
+```text
+day_start=07:00
+day_end=21:00
+min_minutes=30
 ```
 
 The frontend expects the parser to return schedule data in this shape:
@@ -90,6 +106,8 @@ The export size is based on the selected preview mode and the user's device scre
 4. Choose a color theme and view mode.
 5. Optional: upload a custom background image and adjust the layout.
 6. Click **Download Wallpaper** to export the PNG.
+
+To compare two schedules, switch the upload mode to **Compare**, upload two COE PDFs, adjust the free-time window if needed, and review the common free-time cards.
 
 ## Run Locally
 
