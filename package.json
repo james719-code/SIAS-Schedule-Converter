@@ -1,0 +1,14 @@
+{
+  "name": "sias-schedule-converter",
+  "version": "2.0.0",
+  "description": "Convert SIAS COE schedule PDFs to calendar/image formats",
+  "main": "script.js",
+  "scripts": {
+    "start": "node -e \"console.log('SIAS Schedule Converter')\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "author": "jimzzz <gallegojamesryan719@gmail.com>",
+  "license": "MIT"
+}
