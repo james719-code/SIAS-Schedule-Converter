@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Theme 1: Ocean (Default) */
+  :root, [data-theme="ocean"] {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
+  }
+
+  /* Theme 2: Dark */
+  [data-theme="dark"] {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  /* Theme 3: Midnight */
+  [data-theme="midnight"] {
+    --background: 265 50% 6%;
+    --foreground: 260 20% 96%;
+    --card: 265 40% 10%;
+    --card-foreground: 260 20% 96%;
+    --popover: 265 40% 10%;
+    --popover-foreground: 260 20% 96%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 265 30% 16%;
+    --secondary-foreground: 260 20% 96%;
+    --muted: 265 30% 16%;
+    --muted-foreground: 265 15% 60%;
+    --accent: 265 30% 20%;
+    --accent-foreground: 260 20% 96%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 265 30% 18%;
+    --input: 265 30% 18%;
+    --ring: 263 70% 50%;
+  }
+
+  /* Theme 4: Maroon */
+  [data-theme="maroon"] {
+    --background: 350 30% 98%;
+    --foreground: 350 50% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 350 50% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 350 50% 15%;
+    --primary: 345 80% 40%;
+    --primary-foreground: 350 30% 98%;
+    --secondary: 350 20% 94%;
+    --secondary-foreground: 350 50% 15%;
+    --muted: 350 20% 94%;
+    --muted-foreground: 350 15% 45%;
+    --accent: 350 25% 90%;
+    --accent-foreground: 350 50% 15%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 350 30% 98%;
+    --border: 350 20% 88%;
+    --input: 350 20% 88%;
+    --ring: 345 80% 40%;
+  }
+
+  /* Theme 5: Wisteria */
+  [data-theme="wisteria"] {
+    --background: 270 40% 98%;
+    --foreground: 270 50% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 270 50% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 50% 15%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 270 40% 98%;
+    --secondary: 270 25% 95%;
+    --secondary-foreground: 270 50% 15%;
+    --muted: 270 25% 95%;
+    --muted-foreground: 270 15% 45%;
+    --accent: 270 30% 90%;
+    --accent-foreground: 270 50% 15%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 270 40% 98%;
+    --border: 270 20% 88%;
+    --input: 270 20% 88%;
+    --ring: 271 81% 56%;
+  }
+
+  /* Theme 6: Emerald */
+  [data-theme="emerald"] {
+    --background: 150 30% 98%;
+    --foreground: 160 50% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 50% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 50% 12%;
+    --primary: 158 64% 42%;
+    --primary-foreground: 150 30% 98%;
+    --secondary: 150 20% 94%;
+    --secondary-foreground: 160 50% 12%;
+    --muted: 150 20% 94%;
+    --muted-foreground: 160 15% 45%;
+    --accent: 150 25% 90%;
+    --accent-foreground: 160 50% 12%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 150 30% 98%;
+    --border: 150 20% 88%;
+    --input: 150 20% 88%;
+    --ring: 158 64% 42%;
+  }
+
+  /* Theme 7: Summer */
+  [data-theme="summer"] {
+    --background: 38 100% 97%;
+    --foreground: 30 60% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 60% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 60% 15%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 30 60% 15%;
+    --secondary: 38 40% 92%;
+    --secondary-foreground: 30 60% 15%;
+    --muted: 38 40% 92%;
+    --muted-foreground: 30 20% 45%;
+    --accent: 38 50% 88%;
+    --accent-foreground: 30 60% 15%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 38 100% 97%;
+    --border: 38 30% 85%;
+    --input: 38 30% 85%;
+    --ring: 38 92% 50%;
+  }
+
+  /* Theme 8: Sakura */
+  [data-theme="sakura"] {
+    --background: 340 100% 98%;
+    --foreground: 340 50% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 340 50% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 50% 15%;
+    --primary: 330 81% 60%;
+    --primary-foreground: 340 100% 98%;
+    --secondary: 340 40% 95%;
+    --secondary-foreground: 340 50% 15%;
+    --muted: 340 40% 95%;
+    --muted-foreground: 340 20% 45%;
+    --accent: 340 50% 90%;
+    --accent-foreground: 340 50% 15%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 340 100% 98%;
+    --border: 340 30% 88%;
+    --input: 340 30% 88%;
+    --ring: 330 81% 60%;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  
+  [data-theme="dark"] .glass-panel,
+  [data-theme="midnight"] .glass-panel {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}

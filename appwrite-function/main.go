@@ -72,14 +72,15 @@ type ScheduleItem struct {
 }
 
 type SubjectItem struct {
-	Subject   string         `json:"subject"`
-	Schedules []ScheduleItem `json:"schedules"`
+	Subject     string         `json:"subject"`
+	SubjectCode string         `json:"subjectCode,omitempty"`
+	Schedules   []ScheduleItem `json:"schedules"`
 }
 
 type ProcessResult struct {
-	Subjects    []SubjectItem `json:"subjects"`
-	SectionName string        `json:"sectionName"`
 	Cached      bool          `json:"_cached"`
+	SectionName string        `json:"sectionName"`
+	Subjects    []SubjectItem `json:"subjects"`
 }
 
 type CompareResult struct {
@@ -215,6 +216,8 @@ func processRawLines(lines []string) ProcessResult {
 	sectionPattern := regexp.MustCompile(`(?i)\b(BS[A-Z]+|BIT|BEED|BSED|AB|STEM|HUMSS|ABM|GAS|TVL)-[0-9][A-Z0-9]*\b`)
 	subjCodePattern := regexp.MustCompile(`^[A-Z]{2,6}\s*\d{3,4}[A-Z]?`)
 
+	splitSubjPattern := regexp.MustCompile(`^(?i)([A-Z0-9]{2,7})\s*[-:]?\s*(.*)$`)
+
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
@@ -233,9 +236,22 @@ func processRawLines(lines []string) ProcessResult {
 			if currentSubject != nil {
 				subjects = append(subjects, *currentSubject)
 			}
+
+			subTitle := trimmed
+			subCode := ""
+
+			if matches := splitSubjPattern.FindStringSubmatch(trimmed); len(matches) >= 3 {
+				subCode = strings.TrimSpace(matches[1])
+				subTitle = strings.TrimSpace(matches[2])
+				if subTitle == "" {
+					subTitle = trimmed
+				}
+			}
+
 			currentSubject = &SubjectItem{
-				Subject:   trimmed,
-				Schedules: []ScheduleItem{},
+				Subject:     subTitle,
+				SubjectCode: subCode,
+				Schedules:   []ScheduleItem{},
 			}
 			continue
 		}
