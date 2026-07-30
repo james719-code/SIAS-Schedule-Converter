@@ -506,7 +506,7 @@ export default function WallpaperCanvas({
           </div>
         </div>
 
-        {/* FORMAT MODE 1: CARDS VIEW */}
+        {/* FORMAT MODE 1: CARDS VIEW - Dynamic Flex Wrapping for Room Badges to Prevent Cropping */}
         {wallpaperFormat === 'cards' && (
           <div className={`grid gap-3.5 ${isMobileView ? 'grid-cols-2' : 'grid-cols-3'} flex-1`}>
             {dayNames.map((day) => {
@@ -533,9 +533,9 @@ export default function WallpaperCanvas({
                       {daySubjects.map((item, i) => (
                         <div key={i} className={`rounded-xl p-2.5 space-y-1 shrink-0 ${activeTheme.itemBg}`}>
                           <div className="font-bold text-[0.85em] leading-snug break-words whitespace-normal">{item.subject}</div>
-                          <div className="flex items-center justify-between gap-1 text-[0.75em] pt-0.5">
+                          <div className="flex flex-wrap items-center justify-between gap-1 text-[0.75em] pt-0.5 min-w-0">
                             <span className="font-semibold">{item.time}</span>
-                            <span className={`px-2 py-0.5 rounded-md text-[0.75em] font-extrabold tracking-wide uppercase shrink-0 border border-current/10 shadow-2xs ${activeTheme.roomBadge}`}>
+                            <span className={`px-2 py-0.5 rounded-md text-[0.75em] font-extrabold tracking-wide uppercase max-w-full truncate border border-current/10 shadow-2xs ${activeTheme.roomBadge}`}>
                               {item.room}
                             </span>
                           </div>
@@ -549,7 +549,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Crisp Text & High Scale Canvas Exporting) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Dynamic Font Scaling & Un-cropped Legend Text) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -584,7 +584,7 @@ export default function WallpaperCanvas({
                 </div>
               ))}
 
-              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines with Theme Badge */}
+              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines */}
               {activeSlotsToUse.map((slot, slotIdx) => {
                 const isLastSlot = slotIdx === activeSlotsToUse.length - 1
                 return (
@@ -650,10 +650,20 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Crisp Sans Font for Perfect Rasterization in Canvas Export */}
+              {/* Class Blocks - Dynamic Font Scale & Clean Word Wrap so room code is NEVER cropped */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
                 const roomText = (block.subj.room || '').toUpperCase()
+
+                // Dynamic font scaling & word wrap based on room string length
+                const isVeryLong = roomText.length >= 10
+                const isLong = roomText.length >= 7
+                const fontClass = isVeryLong
+                  ? 'text-[7px] leading-tight'
+                  : isLong
+                  ? 'text-[8px] leading-tight'
+                  : 'text-[9.5px] leading-tight'
+
                 return (
                   <div
                     key={idx}
@@ -667,9 +677,9 @@ export default function WallpaperCanvas({
                       borderColor: colorObj.border,
                       color: colorObj.text
                     }}
-                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-1"
+                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0.5"
                   >
-                    <span className="font-sans text-[8.5px] sm:text-[9.5px] font-black tracking-wider text-center leading-tight truncate px-0.5 select-none uppercase">
+                    <span className={`font-sans ${fontClass} font-black tracking-normal text-center break-words max-w-full px-0.5 select-none uppercase`}>
                       {roomText}
                     </span>
                   </div>
@@ -677,16 +687,16 @@ export default function WallpaperCanvas({
               })}
             </div>
 
-            {/* Subject Legend Section - Resizes dynamically with cardFontScale, with leading-normal to avoid text clipping */}
+            {/* Subject Legend Section - Dynamic Flex-Wrap Layout so Subject Names are 100% UN-CROPPED */}
             {uniqueSubjectsList.length > 0 && (
-              <div className="pt-2.5 border-t border-current/15 space-y-1.5 shrink-0">
+              <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
                   <span style={{ fontSize: `${cardFontScale * 0.65}rem` }}>Subject Legend</span>
                   <span style={{ fontSize: `${cardFontScale * 0.55}rem` }} className="font-mono opacity-60">
                     ({uniqueSubjectsList.length} Subjects)
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+                <div className="flex flex-wrap gap-1.5 max-w-full">
                   {uniqueSubjectsList.map((item, idx) => {
                     const colorObj = getSubjectColorObj(item.subject)
                     return (
@@ -696,15 +706,15 @@ export default function WallpaperCanvas({
                           backgroundColor: colorObj.bg,
                           color: colorObj.text,
                           borderColor: colorObj.border,
-                          fontSize: `${cardFontScale * 0.65}rem`
+                          fontSize: `${cardFontScale * 0.625}rem`
                         }}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold shadow-xs truncate min-w-0 leading-normal"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold shadow-xs max-w-full leading-normal"
                       >
                         <span
                           style={{ backgroundColor: colorObj.dot }}
                           className="w-2 h-2 rounded-full shrink-0"
                         />
-                        <span className="font-bold truncate leading-normal">{item.subject}</span>
+                        <span className="font-bold leading-normal">{item.subject}</span>
                         <span className="opacity-90 font-mono text-[0.85em] shrink-0 leading-normal">({item.room})</span>
                       </div>
                     )
