@@ -12,9 +12,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-slate-200 text-slate-900 shadow-md',
     headerAccent: 'text-blue-600 font-bold',
     itemBg: 'bg-blue-50/80 border border-blue-100 text-slate-800',
-    roomBadge: 'bg-blue-100 text-blue-900 font-mono font-semibold',
+    roomBadge: 'bg-blue-100 text-blue-950 font-bold',
     tableBorder: 'border-blue-900/20',
-    tableHeaderBg: 'bg-blue-100/70 text-blue-950'
+    tableHeaderBg: 'bg-blue-100/70 text-blue-950',
+    timeBadgeBg: 'bg-white text-blue-950 border-blue-200 shadow-xs'
   },
   dark: {
     bg: 'bg-slate-950 border-slate-800 text-slate-100',
@@ -23,9 +24,10 @@ const themeStyles = {
     cardBg: 'bg-slate-900/95 border-slate-800 text-slate-100 shadow-xl',
     headerAccent: 'text-sky-400 font-bold',
     itemBg: 'bg-slate-800/80 border border-slate-700 text-slate-200',
-    roomBadge: 'bg-slate-700 text-slate-100 font-mono font-semibold',
+    roomBadge: 'bg-slate-700 text-slate-100 font-bold',
     tableBorder: 'border-slate-800',
-    tableHeaderBg: 'bg-slate-800/90 text-sky-300'
+    tableHeaderBg: 'bg-slate-800/90 text-sky-300',
+    timeBadgeBg: 'bg-slate-900 text-slate-100 border-slate-700 shadow-xs'
   },
   midnight: {
     bg: 'bg-purple-950 border-purple-800 text-purple-100',
@@ -34,9 +36,10 @@ const themeStyles = {
     cardBg: 'bg-purple-900/95 border-purple-800 text-purple-100 shadow-xl',
     headerAccent: 'text-purple-300 font-bold',
     itemBg: 'bg-purple-800/80 border border-purple-700 text-purple-200',
-    roomBadge: 'bg-purple-700 text-purple-100 font-mono font-semibold',
+    roomBadge: 'bg-purple-700 text-purple-100 font-bold',
     tableBorder: 'border-purple-800',
-    tableHeaderBg: 'bg-purple-800/90 text-purple-200'
+    tableHeaderBg: 'bg-purple-800/90 text-purple-200',
+    timeBadgeBg: 'bg-purple-900 text-purple-100 border-purple-700 shadow-xs'
   },
   maroon: {
     bg: 'bg-amber-50/80 border-rose-200 text-stone-900',
@@ -45,9 +48,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-rose-200 text-stone-900 shadow-md',
     headerAccent: 'text-red-800 font-bold',
     itemBg: 'bg-red-50/80 border border-red-100 text-stone-800',
-    roomBadge: 'bg-red-100 text-red-900 font-mono font-semibold',
+    roomBadge: 'bg-red-100 text-red-950 font-bold',
     tableBorder: 'border-red-900/20',
-    tableHeaderBg: 'bg-red-100/70 text-red-950'
+    tableHeaderBg: 'bg-red-100/70 text-red-950',
+    timeBadgeBg: 'bg-white text-red-950 border-red-200 shadow-xs'
   },
   wisteria: {
     bg: 'bg-purple-50/80 border-purple-200 text-slate-900',
@@ -56,9 +60,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-purple-200 text-slate-900 shadow-md',
     headerAccent: 'text-purple-700 font-bold',
     itemBg: 'bg-purple-50/80 border border-purple-100 text-slate-800',
-    roomBadge: 'bg-purple-100 text-purple-900 font-mono font-semibold',
+    roomBadge: 'bg-purple-100 text-purple-950 font-bold',
     tableBorder: 'border-purple-900/20',
-    tableHeaderBg: 'bg-purple-100/70 text-purple-950'
+    tableHeaderBg: 'bg-purple-100/70 text-purple-950',
+    timeBadgeBg: 'bg-white text-purple-950 border-purple-200 shadow-xs'
   },
   emerald: {
     bg: 'bg-emerald-50/80 border-emerald-200 text-slate-900',
@@ -67,9 +72,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-emerald-200 text-slate-900 shadow-md',
     headerAccent: 'text-emerald-700 font-bold',
     itemBg: 'bg-emerald-50/80 border border-emerald-100 text-slate-800',
-    roomBadge: 'bg-emerald-100 text-emerald-900 font-mono font-semibold',
+    roomBadge: 'bg-emerald-100 text-emerald-950 font-bold',
     tableBorder: 'border-emerald-900/20',
-    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950'
+    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950',
+    timeBadgeBg: 'bg-white text-emerald-950 border-emerald-200 shadow-xs'
   },
   summer: {
     bg: 'bg-amber-50 border-amber-200 text-amber-950',
@@ -78,9 +84,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-amber-200 text-amber-950 shadow-md',
     headerAccent: 'text-amber-600 font-bold',
     itemBg: 'bg-amber-50/80 border border-amber-100 text-amber-900',
-    roomBadge: 'bg-amber-100 text-amber-950 font-mono font-semibold',
+    roomBadge: 'bg-amber-100 text-amber-950 font-bold',
     tableBorder: 'border-amber-900/20',
-    tableHeaderBg: 'bg-amber-100/70 text-amber-950'
+    tableHeaderBg: 'bg-amber-100/70 text-amber-950',
+    timeBadgeBg: 'bg-white text-amber-950 border-amber-200 shadow-xs'
   },
   sakura: {
     bg: 'bg-pink-50/80 border-pink-200 text-slate-900',
@@ -89,9 +96,10 @@ const themeStyles = {
     cardBg: 'bg-white/95 border-pink-200 text-slate-900 shadow-md',
     headerAccent: 'text-pink-600 font-bold',
     itemBg: 'bg-pink-50/80 border border-pink-100 text-slate-800',
-    roomBadge: 'bg-pink-100 text-pink-950 font-mono font-semibold',
+    roomBadge: 'bg-pink-100 text-pink-950 font-bold',
     tableBorder: 'border-pink-900/20',
-    tableHeaderBg: 'bg-pink-100/70 text-pink-950'
+    tableHeaderBg: 'bg-pink-100/70 text-pink-950',
+    timeBadgeBg: 'bg-white text-pink-950 border-pink-200 shadow-xs'
   }
 }
 
@@ -285,18 +293,19 @@ export default function WallpaperCanvas({
 
   const handleMouseUp = () => setIsPanning(false)
 
-  // Export Wallpaper Image to Device with DPR Scaling
+  // Export Wallpaper Image to Device with High DPR Scale (3.5x for vector-sharp text export)
   const handleExportImage = async () => {
     if (!containerRef.current) return
     try {
       setIsExporting(true)
       const info = getDeviceInfo()
-      const exportScale = Math.max(2.5, Math.round((info.dpr || 2) * 100) / 100)
+      const exportScale = Math.max(3.5, Math.round((info.dpr || 2) * 150) / 100)
       const canvas = await html2canvas(containerRef.current, {
         scale: exportScale,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null
+        backgroundColor: null,
+        logging: false
       })
       const link = document.createElement('a')
       link.download = `SIAS_Schedule_Wallpaper_${Date.now()}.png`
@@ -526,7 +535,7 @@ export default function WallpaperCanvas({
                           <div className="font-bold text-[0.85em] leading-snug break-words whitespace-normal">{item.subject}</div>
                           <div className="flex items-center justify-between gap-1 text-[0.75em] pt-0.5">
                             <span className="font-semibold">{item.time}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[0.7em] shrink-0 ${activeTheme.roomBadge}`}>
+                            <span className={`px-2 py-0.5 rounded-md text-[0.75em] font-extrabold tracking-wide uppercase shrink-0 border border-current/10 shadow-2xs ${activeTheme.roomBadge}`}>
                               {item.room}
                             </span>
                           </div>
@@ -540,7 +549,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Displaying Uppercase Room Codes Inside Subject Block Chips) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Crisp Text & High Scale Canvas Exporting) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -575,7 +584,7 @@ export default function WallpaperCanvas({
                 </div>
               ))}
 
-              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines */}
+              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines with Theme Badge */}
               {activeSlotsToUse.map((slot, slotIdx) => {
                 const isLastSlot = slotIdx === activeSlotsToUse.length - 1
                 return (
@@ -596,11 +605,11 @@ export default function WallpaperCanvas({
                     {/* Time Marker centered on top border line */}
                     <div className="absolute top-0 left-0 right-0 -translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
                       {slot.display ? (
-                        <span className="font-mono font-extrabold text-[9px] opacity-95 bg-slate-100 dark:bg-slate-900 px-1 py-0.2 rounded-xs shadow-2xs border border-current/10">
+                        <span className={`font-mono font-extrabold text-[9px] px-1 py-0.2 rounded-xs border ${activeTheme.timeBadgeBg}`}>
                           {slot.display}
                         </span>
                       ) : (
-                        <span className="text-[7px] opacity-40 font-mono bg-slate-100 dark:bg-slate-900 px-0.5 rounded-xs">
+                        <span className={`text-[7px] font-bold font-mono px-0.5 rounded-xs opacity-60 ${activeTheme.timeBadgeBg}`}>
                           :30
                         </span>
                       )}
@@ -609,7 +618,7 @@ export default function WallpaperCanvas({
                     {/* Closing boundary label at the bottom of the table */}
                     {isLastSlot && (
                       <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
-                        <span className="font-mono font-extrabold text-[9px] opacity-95 bg-slate-100 dark:bg-slate-900 px-1 py-0.2 rounded-xs shadow-2xs border border-current/10">
+                        <span className={`font-mono font-extrabold text-[9px] px-1 py-0.2 rounded-xs border ${activeTheme.timeBadgeBg}`}>
                           {parseMinutesToDisplayTime(slot.end)}
                         </span>
                       </div>
@@ -641,7 +650,7 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Render Room Code in ALL CAPS Inside Chip */}
+              {/* Class Blocks - Crisp Sans Font for Perfect Rasterization in Canvas Export */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
                 const roomText = (block.subj.room || '').toUpperCase()
@@ -658,9 +667,9 @@ export default function WallpaperCanvas({
                       borderColor: colorObj.border,
                       color: colorObj.text
                     }}
-                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0.5"
+                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-1"
                   >
-                    <span className="font-mono text-[7.5px] sm:text-[8.5px] font-extrabold tracking-tight text-center leading-none truncate opacity-95 px-0.5 select-none uppercase">
+                    <span className="font-sans text-[8.5px] sm:text-[9.5px] font-black tracking-wider text-center leading-tight truncate px-0.5 select-none uppercase">
                       {roomText}
                     </span>
                   </div>
@@ -668,9 +677,9 @@ export default function WallpaperCanvas({
               })}
             </div>
 
-            {/* Subject Legend Section - Resizes dynamically with cardFontScale */}
+            {/* Subject Legend Section - Resizes dynamically with cardFontScale, with leading-normal to avoid text clipping */}
             {uniqueSubjectsList.length > 0 && (
-              <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
+              <div className="pt-2.5 border-t border-current/15 space-y-1.5 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
                   <span style={{ fontSize: `${cardFontScale * 0.65}rem` }}>Subject Legend</span>
                   <span style={{ fontSize: `${cardFontScale * 0.55}rem` }} className="font-mono opacity-60">
@@ -689,14 +698,14 @@ export default function WallpaperCanvas({
                           borderColor: colorObj.border,
                           fontSize: `${cardFontScale * 0.65}rem`
                         }}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-md border font-bold shadow-xs truncate min-w-0"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold shadow-xs truncate min-w-0 leading-normal"
                       >
                         <span
                           style={{ backgroundColor: colorObj.dot }}
                           className="w-2 h-2 rounded-full shrink-0"
                         />
-                        <span className="font-bold truncate">{item.subject}</span>
-                        <span className="opacity-80 font-mono text-[0.85em] shrink-0">({item.room})</span>
+                        <span className="font-bold truncate leading-normal">{item.subject}</span>
+                        <span className="opacity-90 font-mono text-[0.85em] shrink-0 leading-normal">({item.room})</span>
                       </div>
                     )
                   })}
