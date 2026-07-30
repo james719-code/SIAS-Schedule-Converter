@@ -14,8 +14,7 @@ const themeStyles = {
     itemBg: 'bg-blue-50/80 border border-blue-100 text-slate-800',
     roomBadge: 'bg-blue-100 text-blue-900 font-mono font-semibold',
     tableBorder: 'border-blue-900/20',
-    tableHeaderBg: 'bg-blue-100/70 text-blue-950',
-    lunchBg: 'bg-amber-100/90 border-amber-300 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-blue-100/70 text-blue-950'
   },
   dark: {
     bg: 'bg-slate-950 border-slate-800 text-slate-100',
@@ -26,8 +25,7 @@ const themeStyles = {
     itemBg: 'bg-slate-800/80 border border-slate-700 text-slate-200',
     roomBadge: 'bg-slate-700 text-slate-100 font-mono font-semibold',
     tableBorder: 'border-slate-800',
-    tableHeaderBg: 'bg-slate-800/90 text-sky-300',
-    lunchBg: 'bg-amber-950/80 border-amber-800 text-amber-200 font-bold'
+    tableHeaderBg: 'bg-slate-800/90 text-sky-300'
   },
   midnight: {
     bg: 'bg-purple-950 border-purple-800 text-purple-100',
@@ -38,8 +36,7 @@ const themeStyles = {
     itemBg: 'bg-purple-800/80 border border-purple-700 text-purple-200',
     roomBadge: 'bg-purple-700 text-purple-100 font-mono font-semibold',
     tableBorder: 'border-purple-800',
-    tableHeaderBg: 'bg-purple-800/90 text-purple-200',
-    lunchBg: 'bg-amber-900/70 border-amber-700 text-amber-200 font-bold'
+    tableHeaderBg: 'bg-purple-800/90 text-purple-200'
   },
   maroon: {
     bg: 'bg-amber-50/80 border-rose-200 text-stone-900',
@@ -50,8 +47,7 @@ const themeStyles = {
     itemBg: 'bg-red-50/80 border border-red-100 text-stone-800',
     roomBadge: 'bg-red-100 text-red-900 font-mono font-semibold',
     tableBorder: 'border-red-900/20',
-    tableHeaderBg: 'bg-red-100/70 text-red-950',
-    lunchBg: 'bg-amber-100/90 border-amber-300 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-red-100/70 text-red-950'
   },
   wisteria: {
     bg: 'bg-purple-50/80 border-purple-200 text-slate-900',
@@ -62,8 +58,7 @@ const themeStyles = {
     itemBg: 'bg-purple-50/80 border border-purple-100 text-slate-800',
     roomBadge: 'bg-purple-100 text-purple-900 font-mono font-semibold',
     tableBorder: 'border-purple-900/20',
-    tableHeaderBg: 'bg-purple-100/70 text-purple-950',
-    lunchBg: 'bg-amber-100/90 border-amber-300 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-purple-100/70 text-purple-950'
   },
   emerald: {
     bg: 'bg-emerald-50/80 border-emerald-200 text-slate-900',
@@ -74,8 +69,7 @@ const themeStyles = {
     itemBg: 'bg-emerald-50/80 border border-emerald-100 text-slate-800',
     roomBadge: 'bg-emerald-100 text-emerald-900 font-mono font-semibold',
     tableBorder: 'border-emerald-900/20',
-    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950',
-    lunchBg: 'bg-amber-100/90 border-amber-300 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950'
   },
   summer: {
     bg: 'bg-amber-50 border-amber-200 text-amber-950',
@@ -86,8 +80,7 @@ const themeStyles = {
     itemBg: 'bg-amber-50/80 border border-amber-100 text-amber-900',
     roomBadge: 'bg-amber-100 text-amber-950 font-mono font-semibold',
     tableBorder: 'border-amber-900/20',
-    tableHeaderBg: 'bg-amber-100/70 text-amber-950',
-    lunchBg: 'bg-amber-200/90 border-amber-400 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-amber-100/70 text-amber-950'
   },
   sakura: {
     bg: 'bg-pink-50/80 border-pink-200 text-slate-900',
@@ -98,22 +91,56 @@ const themeStyles = {
     itemBg: 'bg-pink-50/80 border border-pink-100 text-slate-800',
     roomBadge: 'bg-pink-100 text-pink-950 font-mono font-semibold',
     tableBorder: 'border-pink-900/20',
-    tableHeaderBg: 'bg-pink-100/70 text-pink-950',
-    lunchBg: 'bg-amber-100/90 border-amber-300 text-amber-950 font-bold'
+    tableHeaderBg: 'bg-pink-100/70 text-pink-950'
   }
 }
 
+// Compact Day Header Abbreviations (M, T, W, TH, F, S)
+const SHORT_DAY_LABELS = {
+  Monday: 'M',
+  Tuesday: 'T',
+  Wednesday: 'W',
+  Thursday: 'TH',
+  Friday: 'F',
+  Saturday: 'S'
+}
+
+// Helper to convert minutes from midnight to 12-hour display string (e.g. 1080 -> "6:00")
+const parseMinutesToDisplayTime = (totalMins) => {
+  const hours = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  let displayHour = hours % 12
+  if (displayHour === 0) displayHour = 12
+  const minStr = mins === 0 ? '00' : mins.toString().padStart(2, '0')
+  return `${displayHour}:${minStr}`
+}
+
+// Full Master List of 30-Minute Granularity Time Slots (7:00 AM to 6:30 PM)
 const TIME_SLOTS = [
-  { label: '8:00 - 9:00', start: 480, end: 540 },
-  { label: '9:00 - 10:00', start: 540, end: 600 },
-  { label: '10:00 - 11:00', start: 600, end: 660 },
-  { label: '11:00 - 12:00', start: 660, end: 720 },
-  { label: '12:00 - 1:00', start: 720, end: 780, isLunch: true },
-  { label: '1:00 - 2:00', start: 780, end: 840 },
-  { label: '2:00 - 3:00', start: 840, end: 900 },
-  { label: '3:00 - 4:00', start: 900, end: 960 },
-  { label: '4:00 - 5:00', start: 960, end: 1020 },
-  { label: '5:00 - 6:00', start: 1020, end: 1080 }
+  { id: '7:00', display: '7:00', start: 420, end: 450 },
+  { id: '7:30', display: '', isHalfHour: true, start: 450, end: 480 },
+  { id: '8:00', display: '8:00', start: 480, end: 510 },
+  { id: '8:30', display: '', isHalfHour: true, start: 510, end: 540 },
+  { id: '9:00', display: '9:00', start: 540, end: 570 },
+  { id: '9:30', display: '', isHalfHour: true, start: 570, end: 600 },
+  { id: '10:00', display: '10:00', start: 600, end: 630 },
+  { id: '10:30', display: '', isHalfHour: true, start: 630, end: 660 },
+  { id: '11:00', display: '11:00', start: 660, end: 690 },
+  { id: '11:30', display: '', isHalfHour: true, start: 690, end: 720 },
+  { id: '12:00', display: '12:00', start: 720, end: 750 },
+  { id: '12:30', display: '', isHalfHour: true, start: 750, end: 780 },
+  { id: '1:00', display: '1:00', start: 780, end: 810 },
+  { id: '1:30', display: '', isHalfHour: true, start: 810, end: 840 },
+  { id: '2:00', display: '2:00', start: 840, end: 870 },
+  { id: '2:30', display: '', isHalfHour: true, start: 870, end: 900 },
+  { id: '3:00', display: '3:00', start: 900, end: 930 },
+  { id: '3:30', display: '', isHalfHour: true, start: 930, end: 960 },
+  { id: '4:00', display: '4:00', start: 960, end: 990 },
+  { id: '4:30', display: '', isHalfHour: true, start: 990, end: 1020 },
+  { id: '5:00', display: '5:00', start: 1020, end: 1050 },
+  { id: '5:30', display: '', isHalfHour: true, start: 1050, end: 1080 },
+  { id: '6:00', display: '6:00', start: 1080, end: 1110 },
+  { id: '6:30', display: '', isHalfHour: true, start: 1110, end: 1140 }
 ]
 
 // 21 High-Contrast Distinct Color Palettes with Maximum Hue Separation
@@ -157,6 +184,7 @@ export default function WallpaperCanvas({
   setViewMode
 }) {
   const containerRef = useRef(null)
+  const fullscreenContainerRef = useRef(null)
   const [zoom, setZoom] = useState(1.0)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
@@ -186,9 +214,6 @@ export default function WallpaperCanvas({
   const toggleFullscreen = () => {
     if (!isFullscreen) {
       setIsFullscreen(true)
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {})
-      }
     } else {
       setIsFullscreen(false)
       if (document.fullscreenElement && document.exitFullscreen) {
@@ -196,6 +221,26 @@ export default function WallpaperCanvas({
       }
     }
   }
+
+  // Target specific overlay element for native browser fullscreen and lock page scrolling
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+
+      if (fullscreenContainerRef.current && fullscreenContainerRef.current.requestFullscreen) {
+        fullscreenContainerRef.current.requestFullscreen().catch(() => {})
+      }
+    } else {
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
+  }, [isFullscreen])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -310,7 +355,42 @@ export default function WallpaperCanvas({
     return TIMETABLE_BLOCK_COLORS[fallbackIdx]
   }
 
-  // Compute Timetable Matrix Grid Placements
+  // Dynamic Schedule Time Boundary Calculation (Prune unused morning/evening hours)
+  const getScheduleTimeBounds = (data) => {
+    let minStart = 24 * 60
+    let maxEnd = 0
+
+    if (data) {
+      Object.values(data).forEach(dayItems => {
+        dayItems?.forEach(item => {
+          const { start, end } = parseStartAndEndMinutes(item.time)
+          if (start > 0) minStart = Math.min(minStart, start)
+          if (end > 0) maxEnd = Math.max(maxEnd, end)
+        })
+      })
+    }
+
+    if (minStart === 24 * 60) minStart = 480 // 8:00 AM fallback
+    if (maxEnd === 0) maxEnd = 1020 // 5:00 PM fallback
+
+    // Floor minStart to hour start (e.g. 7:30 AM -> 7:00 AM [420])
+    const startMins = Math.floor(minStart / 60) * 60
+    // Ceil maxEnd to hour end (e.g. 5:15 PM -> 6:00 PM [1080])
+    const endMins = Math.max(startMins + 120, Math.ceil(maxEnd / 60) * 60)
+
+    return { startMins, endMins }
+  }
+
+  const timeBounds = getScheduleTimeBounds(processedData)
+  
+  // Filter TIME_SLOTS to dynamically prune unused morning and evening hours
+  const activeTimeSlots = TIME_SLOTS.filter(
+    s => s.start >= timeBounds.startMins && s.end <= timeBounds.endMins
+  )
+
+  const activeSlotsToUse = activeTimeSlots.length > 0 ? activeTimeSlots : TIME_SLOTS
+
+  // Compute Timetable Matrix Grid Placements with 30-minute granularity
   const numDays = timetableDays.length
   const classBlocks = []
   
@@ -320,11 +400,11 @@ export default function WallpaperCanvas({
       const { start, end } = parseStartAndEndMinutes(subj.time)
       if (start === 0 && end === 0) return
 
-      let startSlotIdx = TIME_SLOTS.findIndex(s => start >= s.start && start < s.end)
-      if (startSlotIdx === -1 && start <= 480) startSlotIdx = 0
+      let startSlotIdx = activeSlotsToUse.findIndex(s => start >= s.start && start < s.end)
+      if (startSlotIdx === -1 && start <= activeSlotsToUse[0].start) startSlotIdx = 0
 
-      let endSlotIdx = TIME_SLOTS.findIndex(s => end > s.start && end <= s.end)
-      if (endSlotIdx === -1 && end >= 1080) endSlotIdx = 9
+      let endSlotIdx = activeSlotsToUse.findIndex(s => end > s.start && end <= s.end)
+      if (endSlotIdx === -1 && end >= activeSlotsToUse[activeSlotsToUse.length - 1].end) endSlotIdx = activeSlotsToUse.length - 1
 
       if (startSlotIdx !== -1) {
         if (endSlotIdx === -1 || endSlotIdx < startSlotIdx) endSlotIdx = startSlotIdx
@@ -348,10 +428,10 @@ export default function WallpaperCanvas({
     })
   })
 
-  // Font scale calculation for cards
+  // Font scale calculation for cards and subject legend
   const cardFontScale = (cardFontSize || 100) / 100
 
-  // Render Inner Fixed Canvas Element (Uncompressed layout that clips/breaks when overflowing boundary)
+  // Render Inner Fixed Canvas Element
   const renderCanvasElement = () => (
     <div
       ref={containerRef}
@@ -362,7 +442,7 @@ export default function WallpaperCanvas({
         transition: isPanning ? 'none' : 'transform 0.1s ease-out',
         fontFamily: selectedFont
       }}
-      className={`relative rounded-3xl p-5 sm:p-8 shadow-2xl overflow-hidden shrink-0 transition-all ${activeTheme.bg}`}
+      className={`relative rounded-3xl p-4 sm:p-7 shadow-2xl overflow-hidden shrink-0 transition-all ${activeTheme.bg}`}
     >
       {/* Mock Phone Notch & Status Bar (Hidden during PNG Export) */}
       {isMobileView && (
@@ -402,10 +482,10 @@ export default function WallpaperCanvas({
         />
       )}
 
-      {/* Wallpaper Content */}
-      <div className={`relative z-10 space-y-5 ${isMobileView ? 'pt-5' : ''}`}>
+      {/* Wallpaper Content Container - Flex Col to fill full card height dynamically */}
+      <div className={`relative z-10 flex flex-col justify-between h-full space-y-3 ${isMobileView ? 'pt-4 pb-2' : ''}`}>
         {/* Header Title */}
-        <div className="text-center space-y-1 shrink-0">
+        <div className="text-center space-y-0.5 shrink-0">
           <h2
             style={{ fontFamily: customFont === 'modern' ? 'Caveat, cursive' : selectedFont }}
             className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${activeTheme.title}`}
@@ -417,9 +497,9 @@ export default function WallpaperCanvas({
           </div>
         </div>
 
-        {/* FORMAT MODE 1: CARDS VIEW (Uncompressed, full text without line-clamp truncation so overflows are visible) */}
+        {/* FORMAT MODE 1: CARDS VIEW */}
         {wallpaperFormat === 'cards' && (
-          <div className={`grid gap-3.5 ${isMobileView ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`grid gap-3.5 ${isMobileView ? 'grid-cols-2' : 'grid-cols-3'} flex-1`}>
             {dayNames.map((day) => {
               const daySubjects = processedData?.[day] || []
               const dim = cardDimensions[day] || { w: 100, h: 100, x: 0, y: 0 }
@@ -443,7 +523,6 @@ export default function WallpaperCanvas({
                     <div className="space-y-2">
                       {daySubjects.map((item, i) => (
                         <div key={i} className={`rounded-xl p-2.5 space-y-1 shrink-0 ${activeTheme.itemBg}`}>
-                          {/* Full Subject Name without truncating/line-clamping to reveal true height */}
                           <div className="font-bold text-[0.85em] leading-snug break-words whitespace-normal">{item.subject}</div>
                           <div className="flex items-center justify-between gap-1 text-[0.75em] pt-0.5">
                             <span className="font-semibold">{item.time}</span>
@@ -461,25 +540,26 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Displaying Uppercase Room Codes Inside Subject Block Chips) */}
         {wallpaperFormat === 'timetable' && (
-          <div className={`rounded-2xl border p-3 sm:p-4 space-y-4 shrink-0 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
-            {/* Unified 2D CSS Grid Table with Fixed Non-Compressing Row Heights */}
+          <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
+            {/* Unified 2D CSS Grid Table - Header row set to 28px */}
             <div
               style={{
-                gridTemplateColumns: `54px repeat(${numDays}, minmax(0, 1fr))`,
-                gridTemplateRows: `32px repeat(10, 44px)`
+                gridTemplateColumns: `42px repeat(${numDays}, minmax(0, 1fr))`,
+                gridTemplateRows: `28px repeat(${activeSlotsToUse.length}, minmax(11px, 1fr))`
               }}
-              className="grid gap-1.5 text-xs relative"
+              className="grid gap-0 relative flex-1 min-h-0"
             >
-              {/* Row 1: Header */}
+              {/* Row 1: Time Header Chip */}
               <div
                 style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 1, gridRowEnd: 2 }}
-                className={`rounded-xl p-1.5 font-mono text-[10px] font-bold flex items-center justify-center ${activeTheme.tableHeaderBg}`}
+                className={`rounded-lg p-1 font-mono text-[9.5px] font-bold flex items-center justify-center mb-2 ${activeTheme.tableHeaderBg}`}
               >
                 TIME
               </div>
 
+              {/* Day Headers Chips (Compact M, T, W, TH, F, S) */}
               {timetableDays.map((d, idx) => (
                 <div
                   key={d}
@@ -489,32 +569,59 @@ export default function WallpaperCanvas({
                     gridRowStart: 1,
                     gridRowEnd: 2
                   }}
-                  className={`rounded-xl p-1.5 text-center uppercase font-extrabold tracking-wider ${activeTheme.tableHeaderBg}`}
+                  className={`rounded-lg p-1 text-center uppercase font-extrabold text-[10px] tracking-wider flex items-center justify-center mb-2 ${activeTheme.tableHeaderBg}`}
                 >
-                  {d.slice(0, 3)}
+                  {SHORT_DAY_LABELS[d] || d}
                 </div>
               ))}
 
-              {/* Rows 2 to 11: Time Labels */}
-              {TIME_SLOTS.map((slot, slotIdx) => (
-                <div
-                  key={slot.label}
-                  style={{
-                    gridColumnStart: 1,
-                    gridColumnEnd: 2,
-                    gridRowStart: slotIdx + 2,
-                    gridRowEnd: slotIdx + 3
-                  }}
-                  className="text-[9px] font-mono opacity-80 font-semibold flex items-center justify-center pr-1 border-r border-current/10"
-                >
-                  {slot.label}
-                </div>
-              ))}
+              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines */}
+              {activeSlotsToUse.map((slot, slotIdx) => {
+                const isLastSlot = slotIdx === activeSlotsToUse.length - 1
+                return (
+                  <div
+                    key={slot.id}
+                    style={{
+                      gridColumnStart: 1,
+                      gridColumnEnd: 2,
+                      gridRowStart: slotIdx + 2,
+                      gridRowEnd: slotIdx + 3
+                    }}
+                    className={`font-mono text-[9px] font-semibold relative border-r border-current/20 select-none ${
+                      slot.isHalfHour
+                        ? 'border-t border-dashed border-current/20 dark:border-white/15'
+                        : 'border-t border-solid border-current/30 dark:border-white/25'
+                    }`}
+                  >
+                    {/* Time Marker centered on top border line */}
+                    <div className="absolute top-0 left-0 right-0 -translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
+                      {slot.display ? (
+                        <span className="font-mono font-extrabold text-[9px] opacity-95 bg-slate-100 dark:bg-slate-900 px-1 py-0.2 rounded-xs shadow-2xs border border-current/10">
+                          {slot.display}
+                        </span>
+                      ) : (
+                        <span className="text-[7px] opacity-40 font-mono bg-slate-100 dark:bg-slate-900 px-0.5 rounded-xs">
+                          :30
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Closing boundary label at the bottom of the table */}
+                    {isLastSlot && (
+                      <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
+                        <span className="font-mono font-extrabold text-[9px] opacity-95 bg-slate-100 dark:bg-slate-900 px-1 py-0.2 rounded-xs shadow-2xs border border-current/10">
+                          {parseMinutesToDisplayTime(slot.end)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
               {/* Base Background Grid Cells */}
               {timetableDays.map((_, dayIdx) =>
-                TIME_SLOTS.map((slot, slotIdx) => {
-                  if (slot.isLunch) return null
+                activeSlotsToUse.map((slot, slotIdx) => {
+                  const isLastCol = dayIdx === timetableDays.length - 1
                   return (
                     <div
                       key={`bg-${dayIdx}-${slotIdx}`}
@@ -524,28 +631,20 @@ export default function WallpaperCanvas({
                         gridRowStart: slotIdx + 2,
                         gridRowEnd: slotIdx + 3
                       }}
-                      className="rounded-xl border border-dashed border-current/15 bg-slate-100/30 dark:bg-slate-800/30 min-h-[44px]"
+                      className={`bg-transparent min-h-[10px] ${
+                        slot.isHalfHour
+                          ? 'border-t border-dashed border-current/20 dark:border-white/15'
+                          : 'border-t border-solid border-current/30 dark:border-white/25'
+                      } ${!isLastCol ? 'border-r border-current/15 dark:border-white/10' : ''}`}
                     />
                   )
                 })
               )}
 
-              {/* Row 6: Lunch Break Banner */}
-              <div
-                style={{
-                  gridRowStart: 6,
-                  gridRowEnd: 7,
-                  gridColumnStart: 2,
-                  gridColumnEnd: numDays + 2
-                }}
-                className={`z-10 rounded-xl border-2 py-2 text-center font-extrabold text-xs tracking-widest uppercase shadow-xs flex items-center justify-center ${activeTheme.lunchBg}`}
-              >
-                LUNCH BREAK
-              </div>
-
-              {/* Class Blocks */}
+              {/* Class Blocks - Render Room Code in ALL CAPS Inside Chip */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
+                const roomText = (block.subj.room || '').toUpperCase()
                 return (
                   <div
                     key={idx}
@@ -556,21 +655,29 @@ export default function WallpaperCanvas({
                       gridRowStart: block.gridRowStart,
                       gridRowEnd: block.gridRowEnd,
                       backgroundColor: colorObj.bg,
-                      borderColor: colorObj.border
+                      borderColor: colorObj.border,
+                      color: colorObj.text
                     }}
-                    className="z-20 rounded-xl border shadow-sm transition-all relative overflow-hidden h-full group hover:brightness-110"
-                  />
+                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0.5"
+                  >
+                    <span className="font-mono text-[7.5px] sm:text-[8.5px] font-extrabold tracking-tight text-center leading-none truncate opacity-95 px-0.5 select-none uppercase">
+                      {roomText}
+                    </span>
+                  </div>
                 )
               })}
             </div>
 
-            {/* Small Subject Legend Row at Bottom */}
+            {/* Subject Legend Section - Resizes dynamically with cardFontScale */}
             {uniqueSubjectsList.length > 0 && (
-              <div className="pt-3 border-t border-current/15 space-y-1.5 shrink-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                  Subject Legend
+              <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
+                  <span style={{ fontSize: `${cardFontScale * 0.65}rem` }}>Subject Legend</span>
+                  <span style={{ fontSize: `${cardFontScale * 0.55}rem` }} className="font-mono opacity-60">
+                    ({uniqueSubjectsList.length} Subjects)
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                   {uniqueSubjectsList.map((item, idx) => {
                     const colorObj = getSubjectColorObj(item.subject)
                     return (
@@ -579,16 +686,17 @@ export default function WallpaperCanvas({
                         style={{
                           backgroundColor: colorObj.bg,
                           color: colorObj.text,
-                          borderColor: colorObj.border
+                          borderColor: colorObj.border,
+                          fontSize: `${cardFontScale * 0.65}rem`
                         }}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] border font-bold shadow-xs shrink-0"
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md border font-bold shadow-xs truncate min-w-0"
                       >
                         <span
                           style={{ backgroundColor: colorObj.dot }}
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          className="w-2 h-2 rounded-full shrink-0"
                         />
-                        <span className="font-bold break-words">{item.subject}</span>
-                        <span className="opacity-80 font-mono text-[8px]">({item.room})</span>
+                        <span className="font-bold truncate">{item.subject}</span>
+                        <span className="opacity-80 font-mono text-[0.85em] shrink-0">({item.room})</span>
                       </div>
                     )
                   })}
@@ -599,27 +707,41 @@ export default function WallpaperCanvas({
         )}
 
         {/* Footer Watermark */}
-        <div className="text-right text-[10px] opacity-60 font-medium pt-2 shrink-0">
+        <div className="text-right text-[10px] opacity-60 font-medium pt-1 shrink-0">
           James Ryan | SIAS Organizer
         </div>
       </div>
     </div>
   )
 
-  // Fullscreen Website Overlay View
+  // Fullscreen Website Overlay View (Targeted Fullscreen Node & Scroll Lock)
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-[9999] w-screen h-screen bg-background flex flex-col overflow-hidden animate-in fade-in duration-200">
-        {/* Fullscreen Header Control Toolbar */}
-        <header className="h-14 border-b border-border/60 bg-card/95 backdrop-blur-md px-4 flex items-center justify-between shadow-xs z-50 shrink-0">
+      <div
+        ref={fullscreenContainerRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 9999999,
+          backgroundColor: '#020617'
+        }}
+        className="bg-slate-950 text-slate-100 flex flex-col overflow-hidden animate-in fade-in duration-200"
+      >
+        {/* Fullscreen Header Control Toolbar - 100% Opaque Solid Dark Background */}
+        <header className="h-14 border-b border-slate-800 bg-slate-900 px-4 flex items-center justify-between shadow-md z-50 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 font-extrabold text-sm text-primary">
+            <span className="flex items-center gap-2 font-extrabold text-sm text-sky-400">
               <Sparkles className="h-4 w-4" />
               Fullscreen Studio
             </span>
 
             {setViewMode && (
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl">
+              <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
                 <Button
                   variant={isMobileView ? 'default' : 'ghost'}
                   size="sm"
@@ -641,17 +763,17 @@ export default function WallpaperCanvas({
           </div>
 
           {/* Zoom Controls */}
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl">
-            <Button variant="ghost" size="sm" onClick={handleZoomOut} title="Zoom Out" className="h-7 w-7 p-0 rounded-lg">
+          <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+            <Button variant="ghost" size="sm" onClick={handleZoomOut} title="Zoom Out" className="h-7 w-7 p-0 rounded-lg text-slate-200 hover:text-white">
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-xs font-mono font-semibold px-2 min-w-[45px] text-center select-none">
+            <span className="text-xs font-mono font-semibold px-2 min-w-[45px] text-center select-none text-slate-200">
               {Math.round(zoom * 100)}%
             </span>
-            <Button variant="ghost" size="sm" onClick={handleZoomIn} title="Zoom In" className="h-7 w-7 p-0 rounded-lg">
+            <Button variant="ghost" size="sm" onClick={handleZoomIn} title="Zoom In" className="h-7 w-7 p-0 rounded-lg text-slate-200 hover:text-white">
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleZoomReset} title="Reset View" className="h-7 w-7 p-0 rounded-lg">
+            <Button variant="ghost" size="sm" onClick={handleZoomReset} title="Reset View" className="h-7 w-7 p-0 rounded-lg text-slate-200 hover:text-white">
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -673,18 +795,18 @@ export default function WallpaperCanvas({
               variant="outline"
               size="sm"
               onClick={toggleFullscreen}
-              className="gap-1.5 h-8 rounded-xl text-xs font-semibold"
+              className="gap-1.5 h-8 rounded-xl text-xs font-semibold border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
             >
-              <Minimize2 className="h-3.5 w-3.5 text-primary" />
+              <Minimize2 className="h-3.5 w-3.5 text-sky-400" />
               <span>Exit Fullscreen</span>
-              <kbd className="hidden md:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border">Esc</kbd>
+              <kbd className="hidden md:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 rounded border border-slate-700">Esc</kbd>
             </Button>
           </div>
         </header>
 
         {/* Main Canvas Viewport Area */}
         <main
-          className="flex-1 relative overflow-auto bg-slate-950/40 p-4 sm:p-10 flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+          className="flex-1 relative overflow-auto bg-slate-950 p-4 sm:p-10 flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -699,19 +821,19 @@ export default function WallpaperCanvas({
   // Normal In-Page Display
   return (
     <div className="space-y-4">
-      {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/40 p-2.5 sm:p-3 rounded-2xl border border-border/40">
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" onClick={handleZoomOut} title="Zoom Out" className="h-8 rounded-lg px-2 text-xs">
+      {/* Top Action Bar - Non-wrapping 1-row layout utilizing full width on all screen sizes */}
+      <div className="flex items-center justify-between gap-2 bg-muted/40 p-2 sm:p-3 rounded-2xl border border-border/40 w-full overflow-x-auto">
+        <div className="flex items-center gap-1 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleZoomOut} title="Zoom Out" className="h-8 w-8 p-0 rounded-lg sm:w-auto sm:px-2 text-xs">
             <ZoomOut className="h-3.5 w-3.5" />
           </Button>
-          <span className="text-[11px] sm:text-xs font-mono font-semibold px-1.5 min-w-[40px] text-center">
+          <span className="text-[11px] sm:text-xs font-mono font-semibold px-1.5 min-w-[36px] text-center select-none">
             {Math.round(zoom * 100)}%
           </span>
-          <Button variant="outline" size="sm" onClick={handleZoomIn} title="Zoom In" className="h-8 rounded-lg px-2 text-xs">
+          <Button variant="outline" size="sm" onClick={handleZoomIn} title="Zoom In" className="h-8 w-8 p-0 rounded-lg sm:w-auto sm:px-2 text-xs">
             <ZoomIn className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleZoomReset} title="Reset View" className="h-8 rounded-lg px-2 text-xs">
+          <Button variant="ghost" size="sm" onClick={handleZoomReset} title="Reset View" className="h-8 w-8 p-0 rounded-lg sm:w-auto sm:px-2 text-xs">
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
 
@@ -720,12 +842,13 @@ export default function WallpaperCanvas({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={toggleFullscreen}
-            className="gap-1.5 h-8 rounded-lg text-xs font-semibold"
+            title="Toggle Fullscreen"
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3 sm:gap-1.5 rounded-lg text-xs font-semibold"
           >
             <Maximize2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Fullscreen</span>
@@ -736,10 +859,10 @@ export default function WallpaperCanvas({
             size="sm"
             onClick={handleExportImage}
             disabled={isExporting}
-            className="gap-1.5 h-8 rounded-lg text-xs font-semibold"
+            className="gap-1.5 h-8 rounded-lg text-xs font-semibold px-2.5 sm:px-3"
           >
             <Download className="h-3.5 w-3.5" />
-            <span className="text-xs">{isExporting ? 'Exporting...' : 'Download Wallpaper'}</span>
+            <span>{isExporting ? 'Exporting...' : 'Download Wallpaper'}</span>
           </Button>
         </div>
       </div>
