@@ -168,6 +168,120 @@ const TIMETABLE_BLOCK_COLORS = [
   { bg: '#312e81', text: '#ffffff', border: '#3730a3', dot: '#a5b4fc' }, // 21. Midnight Blue
 ]
 
+// Standalone Custom Component for Subject Legend Pill (Built specifically for pixel-perfect html2canvas export)
+function SubjectLegendChip({ item, colorObj, fontScale = 1 }) {
+  const basePx = Math.max(9, Math.round(10.5 * fontScale))
+  const dotPx = Math.max(6, Math.round(7 * fontScale))
+
+  return (
+    <div
+      style={{
+        backgroundColor: colorObj.bg,
+        color: colorObj.text,
+        borderColor: colorObj.border,
+        fontSize: `${basePx}px`,
+        lineHeight: 1.25,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '3.5px 8px',
+        borderRadius: '8px',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        fontWeight: 700,
+        maxWidth: '100%',
+        boxSizing: 'border-box'
+      }}
+      className="shadow-2xs shrink-0 select-none"
+    >
+      <span
+        style={{
+          backgroundColor: colorObj.dot,
+          width: `${dotPx}px`,
+          height: `${dotPx}px`,
+          minWidth: `${dotPx}px`,
+          minHeight: `${dotPx}px`,
+          borderRadius: '9999px',
+          display: 'inline-block',
+          flexShrink: 0
+        }}
+      />
+      <span style={{ fontWeight: 700, lineHeight: 1.25, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }} className="min-w-0">
+        {item.subject}
+      </span>
+      <span style={{ fontWeight: 600, opacity: 0.9, fontSize: '0.9em', lineHeight: 1.25, fontFamily: 'Inter, Poppins, system-ui, sans-serif', flexShrink: 0, whiteSpace: 'nowrap' }}>
+        ({item.room})
+      </span>
+    </div>
+  )
+}
+
+// Standalone Custom Component for Timetable Grid Class Block (Built specifically for pixel-perfect html2canvas export)
+function ClassBlockChip({ block, colorObj }) {
+  const roomText = (block.subj.room || '').toUpperCase()
+  const len = roomText.length
+
+  let fontSizePx = 10
+  if (len >= 11) fontSizePx = 7.5
+  else if (len >= 8) fontSizePx = 8.5
+
+  return (
+    <div
+      title={`${block.subj.subject} (${block.subj.room}) - ${block.subj.time}`}
+      style={{
+        gridColumnStart: block.gridColStart,
+        gridColumnEnd: block.gridColEnd,
+        gridRowStart: block.gridRowStart,
+        gridRowEnd: block.gridRowEnd,
+        backgroundColor: colorObj.bg,
+        borderColor: colorObj.border,
+        color: colorObj.text,
+        position: 'relative',
+        overflow: 'hidden',
+        height: '100%',
+        borderRadius: '8px',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        boxSizing: 'border-box'
+      }}
+      className="z-20 shadow-xs group hover:brightness-110"
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2px',
+          pointerEvents: 'none'
+        }}
+      >
+        <span
+          style={{
+            fontSize: `${fontSizePx}px`,
+            lineHeight: 1.1,
+            fontFamily: 'Inter, Poppins, system-ui, sans-serif',
+            fontWeight: 900,
+            textAlign: 'center',
+            wordBreak: 'break-word',
+            textTransform: 'uppercase',
+            letterSpacing: '0.02em',
+            margin: 0,
+            padding: 0
+          }}
+          className="select-none max-w-full"
+        >
+          {roomText}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function WallpaperCanvas({
   currentTheme = 'ocean',
   processedData,
@@ -541,7 +655,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Pure Unpadded Absolute Centered Text) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Using Dedicated Standalone Custom Chip Components) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -642,46 +756,20 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Absolute Inset Centered Text so text positioning is 100% mathematical */}
+              {/* Class Blocks - Rendered with Standalone Custom ClassBlockChip Component */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
-                const roomText = (block.subj.room || '').toUpperCase()
-
-                // Dynamic font scaling based on room string length
-                const isVeryLong = roomText.length >= 10
-                const isLong = roomText.length >= 7
-                const fontClass = isVeryLong
-                  ? 'text-[7px] leading-none'
-                  : isLong
-                  ? 'text-[8px] leading-none'
-                  : 'text-[9.5px] leading-none'
-
                 return (
-                  <div
+                  <ClassBlockChip
                     key={idx}
-                    title={`${block.subj.subject} (${block.subj.room}) - ${block.subj.time}`}
-                    style={{
-                      gridColumnStart: block.gridColStart,
-                      gridColumnEnd: block.gridColEnd,
-                      gridRowStart: block.gridRowStart,
-                      gridRowEnd: block.gridRowEnd,
-                      backgroundColor: colorObj.bg,
-                      borderColor: colorObj.border,
-                      color: colorObj.text
-                    }}
-                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110"
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center p-0.5 pointer-events-none">
-                      <span className={`font-sans ${fontClass} font-black tracking-normal text-center leading-none uppercase select-none`}>
-                        {roomText}
-                      </span>
-                    </div>
-                  </div>
+                    block={block}
+                    colorObj={colorObj}
+                  />
                 )
               })}
             </div>
 
-            {/* Subject Legend Section - Clean Sans Font Badges with Crisp Vector Text */}
+            {/* Subject Legend Section - Rendered with Standalone Custom SubjectLegendChip Component */}
             {uniqueSubjectsList.length > 0 && (
               <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
@@ -694,23 +782,12 @@ export default function WallpaperCanvas({
                   {uniqueSubjectsList.map((item, idx) => {
                     const colorObj = getSubjectColorObj(item.subject)
                     return (
-                      <div
+                      <SubjectLegendChip
                         key={idx}
-                        style={{
-                          backgroundColor: colorObj.bg,
-                          color: colorObj.text,
-                          borderColor: colorObj.border,
-                          fontSize: `${cardFontScale * 0.625}rem`
-                        }}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-bold shadow-xs max-w-full leading-snug"
-                      >
-                        <span
-                          style={{ backgroundColor: colorObj.dot }}
-                          className="w-2 h-2 rounded-full shrink-0"
-                        />
-                        <span className="font-bold leading-snug">{item.subject}</span>
-                        <span className="font-sans font-semibold opacity-90 text-[0.85em] shrink-0 leading-none">({item.room})</span>
-                      </div>
+                        item={item}
+                        colorObj={colorObj}
+                        fontScale={cardFontScale}
+                      />
                     )
                   })}
                 </div>
