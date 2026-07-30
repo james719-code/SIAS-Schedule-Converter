@@ -14,8 +14,7 @@ const themeStyles = {
     itemBg: 'bg-blue-50/80 border border-blue-100 text-slate-800',
     roomBadge: 'bg-blue-100 text-blue-950 font-bold',
     tableBorder: 'border-blue-900/20',
-    tableHeaderBg: 'bg-blue-100/70 text-blue-950',
-    timeBadgeBg: 'bg-white text-blue-950 border-blue-200 shadow-xs'
+    tableHeaderBg: 'bg-blue-100/70 text-blue-950'
   },
   dark: {
     bg: 'bg-slate-950 border-slate-800 text-slate-100',
@@ -26,8 +25,7 @@ const themeStyles = {
     itemBg: 'bg-slate-800/80 border border-slate-700 text-slate-200',
     roomBadge: 'bg-slate-700 text-slate-100 font-bold',
     tableBorder: 'border-slate-800',
-    tableHeaderBg: 'bg-slate-800/90 text-sky-300',
-    timeBadgeBg: 'bg-slate-900 text-slate-100 border-slate-700 shadow-xs'
+    tableHeaderBg: 'bg-slate-800/90 text-sky-300'
   },
   midnight: {
     bg: 'bg-purple-950 border-purple-800 text-purple-100',
@@ -38,8 +36,7 @@ const themeStyles = {
     itemBg: 'bg-purple-800/80 border border-purple-700 text-purple-200',
     roomBadge: 'bg-purple-700 text-purple-100 font-bold',
     tableBorder: 'border-purple-800',
-    tableHeaderBg: 'bg-purple-800/90 text-purple-200',
-    timeBadgeBg: 'bg-purple-900 text-purple-100 border-purple-700 shadow-xs'
+    tableHeaderBg: 'bg-purple-800/90 text-purple-200'
   },
   maroon: {
     bg: 'bg-amber-50/80 border-rose-200 text-stone-900',
@@ -50,8 +47,7 @@ const themeStyles = {
     itemBg: 'bg-red-50/80 border border-red-100 text-stone-800',
     roomBadge: 'bg-red-100 text-red-950 font-bold',
     tableBorder: 'border-red-900/20',
-    tableHeaderBg: 'bg-red-100/70 text-red-950',
-    timeBadgeBg: 'bg-white text-red-950 border-red-200 shadow-xs'
+    tableHeaderBg: 'bg-red-100/70 text-red-950'
   },
   wisteria: {
     bg: 'bg-purple-50/80 border-purple-200 text-slate-900',
@@ -62,8 +58,7 @@ const themeStyles = {
     itemBg: 'bg-purple-50/80 border border-purple-100 text-slate-800',
     roomBadge: 'bg-purple-100 text-purple-950 font-bold',
     tableBorder: 'border-purple-900/20',
-    tableHeaderBg: 'bg-purple-100/70 text-purple-950',
-    timeBadgeBg: 'bg-white text-purple-950 border-purple-200 shadow-xs'
+    tableHeaderBg: 'bg-purple-100/70 text-purple-950'
   },
   emerald: {
     bg: 'bg-emerald-50/80 border-emerald-200 text-slate-900',
@@ -74,8 +69,7 @@ const themeStyles = {
     itemBg: 'bg-emerald-50/80 border border-emerald-100 text-slate-800',
     roomBadge: 'bg-emerald-100 text-emerald-950 font-bold',
     tableBorder: 'border-emerald-900/20',
-    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950',
-    timeBadgeBg: 'bg-white text-emerald-950 border-emerald-200 shadow-xs'
+    tableHeaderBg: 'bg-emerald-100/70 text-emerald-950'
   },
   summer: {
     bg: 'bg-amber-50 border-amber-200 text-amber-950',
@@ -86,8 +80,7 @@ const themeStyles = {
     itemBg: 'bg-amber-50/80 border border-amber-100 text-amber-900',
     roomBadge: 'bg-amber-100 text-amber-950 font-bold',
     tableBorder: 'border-amber-900/20',
-    tableHeaderBg: 'bg-amber-100/70 text-amber-950',
-    timeBadgeBg: 'bg-white text-amber-950 border-amber-200 shadow-xs'
+    tableHeaderBg: 'bg-amber-100/70 text-amber-950'
   },
   sakura: {
     bg: 'bg-pink-50/80 border-pink-200 text-slate-900',
@@ -98,8 +91,7 @@ const themeStyles = {
     itemBg: 'bg-pink-50/80 border border-pink-100 text-slate-800',
     roomBadge: 'bg-pink-100 text-pink-950 font-bold',
     tableBorder: 'border-pink-900/20',
-    tableHeaderBg: 'bg-pink-100/70 text-pink-950',
-    timeBadgeBg: 'bg-white text-pink-950 border-pink-200 shadow-xs'
+    tableHeaderBg: 'bg-pink-100/70 text-pink-950'
   }
 }
 
@@ -549,7 +541,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Dynamic Font Scaling & Un-cropped Legend Text) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Clean Unpadded Text Rendering) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -584,7 +576,7 @@ export default function WallpaperCanvas({
                 </div>
               ))}
 
-              {/* Dynamic Time Column Labels - Centered Directly ON TOP of Horizontal Grid Lines */}
+              {/* Dynamic Time Column Labels - Pure unpadded text sitting directly on horizontal grid line */}
               {activeSlotsToUse.map((slot, slotIdx) => {
                 const isLastSlot = slotIdx === activeSlotsToUse.length - 1
                 return (
@@ -602,14 +594,14 @@ export default function WallpaperCanvas({
                         : 'border-t border-solid border-current/30 dark:border-white/25'
                     }`}
                   >
-                    {/* Time Marker centered on top border line */}
+                    {/* Time Marker centered on top border line - Pure text, zero box padding */}
                     <div className="absolute top-0 left-0 right-0 -translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
                       {slot.display ? (
-                        <span className={`font-mono font-extrabold text-[9px] px-1 py-0.2 rounded-xs border ${activeTheme.timeBadgeBg}`}>
+                        <span className="font-mono font-extrabold text-[9px] opacity-90 leading-none select-none">
                           {slot.display}
                         </span>
                       ) : (
-                        <span className={`text-[7px] font-bold font-mono px-0.5 rounded-xs opacity-60 ${activeTheme.timeBadgeBg}`}>
+                        <span className="text-[7px] font-bold font-mono opacity-40 leading-none select-none">
                           :30
                         </span>
                       )}
@@ -618,7 +610,7 @@ export default function WallpaperCanvas({
                     {/* Closing boundary label at the bottom of the table */}
                     {isLastSlot && (
                       <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
-                        <span className={`font-mono font-extrabold text-[9px] px-1 py-0.2 rounded-xs border ${activeTheme.timeBadgeBg}`}>
+                        <span className="font-mono font-extrabold text-[9px] opacity-90 leading-none select-none">
                           {parseMinutesToDisplayTime(slot.end)}
                         </span>
                       </div>
@@ -650,7 +642,7 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Dynamic Font Scale & Clean Word Wrap so room code is NEVER cropped */}
+              {/* Class Blocks - Clean Un-padded Text Centered Inside Chip */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
                 const roomText = (block.subj.room || '').toUpperCase()
@@ -677,9 +669,9 @@ export default function WallpaperCanvas({
                       borderColor: colorObj.border,
                       color: colorObj.text
                     }}
-                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0.5"
+                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0"
                   >
-                    <span className={`font-sans ${fontClass} font-black tracking-normal text-center break-words max-w-full px-0.5 select-none uppercase`}>
+                    <span className={`font-sans ${fontClass} font-black tracking-normal text-center leading-none uppercase select-none p-0 m-0`}>
                       {roomText}
                     </span>
                   </div>
@@ -687,7 +679,7 @@ export default function WallpaperCanvas({
               })}
             </div>
 
-            {/* Subject Legend Section - Dynamic Flex-Wrap Layout so Subject Names are 100% UN-CROPPED */}
+            {/* Subject Legend Section - Dynamic Flex-Wrap Layout with Compact Unpadded Pills */}
             {uniqueSubjectsList.length > 0 && (
               <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
@@ -708,14 +700,14 @@ export default function WallpaperCanvas({
                           borderColor: colorObj.border,
                           fontSize: `${cardFontScale * 0.625}rem`
                         }}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold shadow-xs max-w-full leading-normal"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-bold shadow-xs max-w-full leading-snug"
                       >
                         <span
                           style={{ backgroundColor: colorObj.dot }}
                           className="w-2 h-2 rounded-full shrink-0"
                         />
-                        <span className="font-bold leading-normal">{item.subject}</span>
-                        <span className="opacity-90 font-mono text-[0.85em] shrink-0 leading-normal">({item.room})</span>
+                        <span className="font-bold leading-snug">{item.subject}</span>
+                        <span className="opacity-90 font-mono text-[0.85em] shrink-0 leading-snug">({item.room})</span>
                       </div>
                     )
                   })}
