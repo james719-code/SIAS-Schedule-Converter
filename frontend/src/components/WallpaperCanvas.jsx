@@ -541,7 +541,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Clean Unpadded Text Rendering) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Pure Unpadded Absolute Centered Text) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -576,7 +576,7 @@ export default function WallpaperCanvas({
                 </div>
               ))}
 
-              {/* Dynamic Time Column Labels - Pure unpadded text sitting directly on horizontal grid line */}
+              {/* Dynamic Time Column Labels - Pure text with zero background boxes or borders */}
               {activeSlotsToUse.map((slot, slotIdx) => {
                 const isLastSlot = slotIdx === activeSlotsToUse.length - 1
                 return (
@@ -594,7 +594,7 @@ export default function WallpaperCanvas({
                         : 'border-t border-solid border-current/30 dark:border-white/25'
                     }`}
                   >
-                    {/* Time Marker centered on top border line - Pure text, zero box padding */}
+                    {/* Time Marker centered directly on top border line - Pure text, zero padding/box */}
                     <div className="absolute top-0 left-0 right-0 -translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
                       {slot.display ? (
                         <span className="font-mono font-extrabold text-[9px] opacity-90 leading-none select-none">
@@ -607,7 +607,7 @@ export default function WallpaperCanvas({
                       )}
                     </div>
 
-                    {/* Closing boundary label at the bottom of the table */}
+                    {/* Closing boundary label at the bottom of the table - Pure text, zero padding/box */}
                     {isLastSlot && (
                       <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 flex items-center justify-center z-30 pointer-events-none">
                         <span className="font-mono font-extrabold text-[9px] opacity-90 leading-none select-none">
@@ -642,19 +642,19 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Clean Un-padded Text Centered Inside Chip */}
+              {/* Class Blocks - Absolute Inset Centered Text so text positioning is 100% mathematical */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
                 const roomText = (block.subj.room || '').toUpperCase()
 
-                // Dynamic font scaling & word wrap based on room string length
+                // Dynamic font scaling based on room string length
                 const isVeryLong = roomText.length >= 10
                 const isLong = roomText.length >= 7
                 const fontClass = isVeryLong
-                  ? 'text-[7px] leading-tight'
+                  ? 'text-[7px] leading-none'
                   : isLong
-                  ? 'text-[8px] leading-tight'
-                  : 'text-[9.5px] leading-tight'
+                  ? 'text-[8px] leading-none'
+                  : 'text-[9.5px] leading-none'
 
                 return (
                   <div
@@ -669,17 +669,19 @@ export default function WallpaperCanvas({
                       borderColor: colorObj.border,
                       color: colorObj.text
                     }}
-                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110 flex items-center justify-center p-0"
+                    className="z-20 rounded-lg border shadow-xs transition-all relative overflow-hidden h-full group hover:brightness-110"
                   >
-                    <span className={`font-sans ${fontClass} font-black tracking-normal text-center leading-none uppercase select-none p-0 m-0`}>
-                      {roomText}
-                    </span>
+                    <div className="absolute inset-0 flex items-center justify-center p-0.5 pointer-events-none">
+                      <span className={`font-sans ${fontClass} font-black tracking-normal text-center leading-none uppercase select-none`}>
+                        {roomText}
+                      </span>
+                    </div>
                   </div>
                 )
               })}
             </div>
 
-            {/* Subject Legend Section - Dynamic Flex-Wrap Layout with Compact Unpadded Pills */}
+            {/* Subject Legend Section - Clean Sans Font Badges with Crisp Vector Text */}
             {uniqueSubjectsList.length > 0 && (
               <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
@@ -707,7 +709,7 @@ export default function WallpaperCanvas({
                           className="w-2 h-2 rounded-full shrink-0"
                         />
                         <span className="font-bold leading-snug">{item.subject}</span>
-                        <span className="opacity-90 font-mono text-[0.85em] shrink-0 leading-snug">({item.room})</span>
+                        <span className="font-sans font-semibold opacity-90 text-[0.85em] shrink-0 leading-none">({item.room})</span>
                       </div>
                     )
                   })}
