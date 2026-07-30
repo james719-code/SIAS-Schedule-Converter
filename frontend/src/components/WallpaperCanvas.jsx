@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Smartphone, Monitor, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
 import { getDeviceInfo, parseStartAndEndMinutes } from '@/lib/scheduleParser'
 
 const themeStyles = {
@@ -168,7 +168,7 @@ const TIMETABLE_BLOCK_COLORS = [
   { bg: '#312e81', text: '#ffffff', border: '#3730a3', dot: '#a5b4fc' }, // 21. Midnight Blue
 ]
 
-// Standalone Custom Component for Subject Legend Pill (Built specifically for pixel-perfect html2canvas export)
+// Standalone Custom Component for Subject Legend Pill (Flattened 1-Level DOM Node)
 function SubjectLegendChip({ item, colorObj, fontScale = 1 }) {
   const basePx = Math.max(9, Math.round(10.5 * fontScale))
   const dotPx = Math.max(6, Math.round(7 * fontScale))
@@ -180,19 +180,22 @@ function SubjectLegendChip({ item, colorObj, fontScale = 1 }) {
         color: colorObj.text,
         borderColor: colorObj.border,
         fontSize: `${basePx}px`,
-        lineHeight: 1.25,
+        lineHeight: 1.2,
+        fontFamily: 'Inter, Poppins, system-ui, sans-serif',
+        fontWeight: 700,
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '3.5px 8px',
-        borderRadius: '8px',
+        padding: '4px 9px',
+        borderRadius: '7px',
         borderWidth: '1px',
         borderStyle: 'solid',
-        fontWeight: 700,
         maxWidth: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        whiteSpace: 'nowrap',
+        userSelect: 'none'
       }}
-      className="shadow-2xs shrink-0 select-none"
+      className="shadow-2xs shrink-0"
     >
       <span
         style={{
@@ -206,24 +209,23 @@ function SubjectLegendChip({ item, colorObj, fontScale = 1 }) {
           flexShrink: 0
         }}
       />
-      <span style={{ fontWeight: 700, lineHeight: 1.25, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }} className="min-w-0">
-        {item.subject}
-      </span>
-      <span style={{ fontWeight: 600, opacity: 0.9, fontSize: '0.9em', lineHeight: 1.25, fontFamily: 'Inter, Poppins, system-ui, sans-serif', flexShrink: 0, whiteSpace: 'nowrap' }}>
-        ({item.room})
-      </span>
+      <span style={{ fontWeight: 700 }}>{item.subject}</span>
+      <span style={{ fontWeight: 600, opacity: 0.9, fontSize: '0.88em' }}>({item.room})</span>
     </div>
   )
 }
 
-// Standalone Custom Component for Timetable Grid Class Block (Built specifically for pixel-perfect html2canvas export)
+// Standalone Custom Component for Timetable Grid Class Block (Flattened 1-Level Single-Node Chip)
 function ClassBlockChip({ block, colorObj }) {
   const roomText = (block.subj.room || '').toUpperCase()
   const len = roomText.length
 
-  let fontSizePx = 10
-  if (len >= 11) fontSizePx = 7.5
-  else if (len >= 8) fontSizePx = 8.5
+  // Calculate font size in exact pixels to guarantee 1 unbroken line (never split "IITRM1" / "2")
+  let fontPx = 9.5
+  if (len >= 11) fontPx = 6.2
+  else if (len >= 9) fontPx = 7.0
+  else if (len >= 7) fontPx = 7.8
+  else if (len >= 5) fontPx = 8.8
 
   return (
     <div
@@ -236,48 +238,27 @@ function ClassBlockChip({ block, colorObj }) {
         backgroundColor: colorObj.bg,
         borderColor: colorObj.border,
         color: colorObj.text,
-        position: 'relative',
+        fontSize: `${fontPx}px`,
+        lineHeight: '1',
+        fontFamily: 'Inter, Poppins, system-ui, sans-serif',
+        fontWeight: 900,
+        textTransform: 'uppercase',
+        letterSpacing: '0.01em',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
         overflow: 'hidden',
-        height: '100%',
-        borderRadius: '8px',
+        borderRadius: '7px',
         borderWidth: '1px',
         borderStyle: 'solid',
+        userSelect: 'none',
         boxSizing: 'border-box'
       }}
-      className="z-20 shadow-xs group hover:brightness-110"
+      className="z-20 shadow-2xs group hover:brightness-110"
     >
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2px',
-          pointerEvents: 'none'
-        }}
-      >
-        <span
-          style={{
-            fontSize: `${fontSizePx}px`,
-            lineHeight: 1.1,
-            fontFamily: 'Inter, Poppins, system-ui, sans-serif',
-            fontWeight: 900,
-            textAlign: 'center',
-            wordBreak: 'break-word',
-            textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-            margin: 0,
-            padding: 0
-          }}
-          className="select-none max-w-full"
-        >
-          {roomText}
-        </span>
-      </div>
+      {roomText}
     </div>
   )
 }
@@ -399,23 +380,28 @@ export default function WallpaperCanvas({
 
   const handleMouseUp = () => setIsPanning(false)
 
-  // Export Wallpaper Image to Device with High DPR Scale (3.5x for vector-sharp text export)
+  // Export Wallpaper Image to Device using html-to-image (SVG ForeignObject Native Browser Rendering)
   const handleExportImage = async () => {
     if (!containerRef.current) return
     try {
       setIsExporting(true)
       const info = getDeviceInfo()
-      const exportScale = Math.max(3.5, Math.round((info.dpr || 2) * 150) / 100)
-      const canvas = await html2canvas(containerRef.current, {
-        scale: exportScale,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false
+      const exportPixelRatio = Math.max(3.5, Math.round((info.dpr || 2) * 150) / 100)
+      
+      const dataUrl = await toPng(containerRef.current, {
+        pixelRatio: exportPixelRatio,
+        cacheBust: true,
+        filter: (node) => {
+          if (node.dataset && (node.dataset.html2canvasIgnore === 'true' || node.dataset.htmlToImageIgnore === 'true')) {
+            return false
+          }
+          return true
+        }
       })
+
       const link = document.createElement('a')
       link.download = `SIAS_Schedule_Wallpaper_${Date.now()}.png`
-      link.href = canvas.toDataURL('image/png')
+      link.href = dataUrl
       link.click()
     } catch (err) {
       console.error('Wallpaper Export Error:', err)
@@ -561,7 +547,7 @@ export default function WallpaperCanvas({
     >
       {/* Mock Phone Notch & Status Bar (Hidden during PNG Export) */}
       {isMobileView && (
-        <div data-html2canvas-ignore="true" className="absolute top-0 left-0 right-0 h-9 px-6 pt-2 flex items-center justify-between text-[10px] font-semibold opacity-70 pointer-events-none z-30">
+        <div data-html-to-image-ignore="true" data-html2canvas-ignore="true" className="absolute top-0 left-0 right-0 h-9 px-6 pt-2 flex items-center justify-between text-[10px] font-semibold opacity-70 pointer-events-none z-30">
           <span>9:41</span>
           <div className="w-20 h-4 bg-black/40 dark:bg-white/40 rounded-full mx-auto" />
           <div className="flex items-center gap-1">
@@ -575,12 +561,12 @@ export default function WallpaperCanvas({
 
       {/* Mock Phone Home Bar (Hidden during PNG Export) */}
       {isMobileView && (
-        <div data-html2canvas-ignore="true" className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-current opacity-30 rounded-full pointer-events-none z-30" />
+        <div data-html-to-image-ignore="true" data-html2canvas-ignore="true" className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-current opacity-30 rounded-full pointer-events-none z-30" />
       )}
 
       {/* Mock Desktop Resolution Tag (Hidden during PNG Export) */}
       {!isMobileView && (
-        <div data-html2canvas-ignore="true" className="absolute top-3 right-4 px-2.5 py-0.5 rounded-full bg-black/20 dark:bg-white/10 text-[9px] font-mono font-semibold opacity-60 pointer-events-none z-30">
+        <div data-html-to-image-ignore="true" data-html2canvas-ignore="true" className="absolute top-3 right-4 px-2.5 py-0.5 rounded-full bg-black/20 dark:bg-white/10 text-[9px] font-mono font-semibold opacity-60 pointer-events-none z-30">
           16:9 Desktop (1152×648px)
         </div>
       )}
@@ -655,7 +641,7 @@ export default function WallpaperCanvas({
           </div>
         )}
 
-        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Using Dedicated Standalone Custom Chip Components) */}
+        {/* FORMAT MODE 2: TIMETABLE MATRIX VIEW (Flattened Single-Node Chip Architecture) */}
         {wallpaperFormat === 'timetable' && (
           <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col justify-between flex-1 min-h-0 space-y-3 ${activeTheme.cardBg} ${activeTheme.tableBorder}`}>
             {/* Unified 2D CSS Grid Table - Header row set to 28px */}
@@ -756,7 +742,7 @@ export default function WallpaperCanvas({
                 })
               )}
 
-              {/* Class Blocks - Rendered with Standalone Custom ClassBlockChip Component */}
+              {/* Class Blocks - Flattened 1-Level Single-Node ClassBlockChip */}
               {classBlocks.map((block, idx) => {
                 const colorObj = getSubjectColorObj(block.subj.subject)
                 return (
@@ -769,7 +755,7 @@ export default function WallpaperCanvas({
               })}
             </div>
 
-            {/* Subject Legend Section - Rendered with Standalone Custom SubjectLegendChip Component */}
+            {/* Subject Legend Section - Flattened 1-Level SubjectLegendChip */}
             {uniqueSubjectsList.length > 0 && (
               <div className="pt-2 border-t border-current/15 space-y-1 shrink-0">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-80 flex items-center justify-between">
